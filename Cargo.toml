@@ -1,0 +1,35 @@
+[package]
+name = "noiter"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[profile.release]
+lto = true
+strip = true
+panic = "abort"
+incremental = true
+codegen-units = 1
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+[dependencies]
+bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "audio", "bevy_dev_tools"]}
+rand = "0.10.1"
+avian2d = {git = "https://github.com/avianphysics/avian", features = ["simd", "parallel"]}
+
+[workspace.lints.clippy]
+pedantic = {level = "warn", priority = -1}
+shadow_reuse = "warn"
+unused_trait_names = "warn"
+missing_inline_in_public_items = "warn"
+as-conversions = "warn"
+str-to-string = "warn"
+missing_panics_doc = "allow"
+missing_errors_doc = "allow"
+too_many_lines = "allow"
+missing_fields_in_debug = "allow"
+missing_safety_doc = "allow"
+similar-names = "allow"
