@@ -15,10 +15,13 @@ opt-level = 3
 [profile.dev]
 opt-level = 1
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "audio", "bevy_dev_tools"]}
 rand = "0.10.1"
-avian2d = {git = "https://github.com/avianphysics/avian", features = ["simd", "parallel"]}
+avian2d = {version = "0.7.0", features = ["simd", "parallel"]}
 
 [workspace.lints.clippy]
 pedantic = {level = "warn", priority = -1}
@@ -33,3 +36,5 @@ too_many_lines = "allow"
 missing_fields_in_debug = "allow"
 missing_safety_doc = "allow"
 similar-names = "allow"
+too_many_arguments = "allow"
+type_complexity = "allow"
