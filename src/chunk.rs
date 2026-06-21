@@ -1,5 +1,6 @@
 use crate::cell::Cell;
 use crate::matrix::Matrix;
+#[derive(Default)]
 pub struct Chunk {
-    pub pixels: Matrix<Cell>,
+    pub cells: Matrix<Cell>,
 }

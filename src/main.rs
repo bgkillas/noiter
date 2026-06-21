@@ -1,5 +1,5 @@
 #![windows_subsystem = "windows"]
 use bevy::app::AppExit;
 fn main() -> AppExit {
-    noiter::main()
+    noiter::app::app_run()
 }

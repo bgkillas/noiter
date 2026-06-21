@@ -19,9 +19,10 @@ opt-level = 1
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "audio", "bevy_dev_tools"]}
+bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "audio", "bevy_dev_tools", "debug"]}
 rand = "0.10.1"
 avian2d = {version = "0.7.0", features = ["simd", "parallel"]}
+bevy_framebuffer = {git = "https://github.com/bgkillas/bevy_framebuffer", features = ["pixels"]}
 
 [workspace.lints.clippy]
 pedantic = {level = "warn", priority = -1}

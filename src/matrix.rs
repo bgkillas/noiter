@@ -1,7 +1,9 @@
+use crate::chunk::Chunk;
+use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, ChunkIndexType};
 use std::array;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 pub struct Matrix<T> {
-    pub elems: [[T; 256]; 256],
+    pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
 }
 pub struct MatrixBounded<T> {
     pub matrix: Matrix<Option<T>>,
@@ -9,11 +11,62 @@ pub struct MatrixBounded<T> {
     pub min_elem: MatrixIndex,
     pub max_elem: MatrixIndex,
 }
-pub type MatrixIndex = (u8, u8);
+#[derive(Clone, Copy)]
+pub struct MatrixIndex {
+    pub x: ChunkIndexType,
+    pub y: ChunkIndexType,
+}
+impl MatrixIndex {
+    pub fn x(self) -> usize {
+        self.x.strict_cast()
+    }
+    pub fn y(self) -> usize {
+        self.y.strict_cast()
+    }
+}
+impl<T> Matrix<T> {
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.elems.iter().flat_map(|elems| elems.iter())
+    }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.elems.iter_mut().flat_map(|elems| elems.iter_mut())
+    }
+    pub fn iter_enumerate(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
+        self.elems.iter().enumerate().flat_map(|(y, elems)| {
+            elems.iter().enumerate().map(move |(x, cell)| {
+                (
+                    MatrixIndex {
+                        x: x.strict_cast(),
+                        y: y.strict_cast(),
+                    },
+                    cell,
+                )
+            })
+        })
+    }
+    pub fn iter_mut_enumerate(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
+        self.elems.iter_mut().enumerate().flat_map(|(y, elems)| {
+            elems.iter_mut().enumerate().map(move |(x, cell)| {
+                (
+                    MatrixIndex {
+                        x: x.strict_cast(),
+                        y: y.strict_cast(),
+                    },
+                    cell,
+                )
+            })
+        })
+    }
+}
 impl<T> Index<MatrixIndex> for Matrix<T> {
     type Output = T;
     fn index(&self, index: MatrixIndex) -> &Self::Output {
-        &self.elems[index.1.strict_cast::<usize>()][index.0.strict_cast::<usize>()]
+        &self.elems[index.y()][index.x()]
+    }
+}
+impl<T> IndexMut<MatrixIndex> for Matrix<T> {
+    fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
+        &mut self.elems[index.y()][index.x()]
     }
 }
 impl<T: Default> Default for Matrix<T> {
@@ -24,9 +77,14 @@ impl<T: Default> Default for Matrix<T> {
     }
 }
 impl<T> Index<MatrixIndex> for MatrixBounded<T> {
-    type Output = T;
+    type Output = Option<T>;
     fn index(&self, index: MatrixIndex) -> &Self::Output {
-        self.matrix[index].as_ref().unwrap()
+        &self.matrix[index]
+    }
+}
+impl<T> IndexMut<MatrixIndex> for MatrixBounded<T> {
+    fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
+        &mut self.matrix[index]
     }
 }
 impl<T> Default for MatrixBounded<T> {
@@ -34,8 +92,53 @@ impl<T> Default for MatrixBounded<T> {
         Self {
             matrix: Matrix::default(),
             len: 0,
-            min_elem: (255, 255),
-            max_elem: (0, 0),
+            min_elem: MatrixIndex {
+                x: ChunkIndexType::MAX,
+                y: ChunkIndexType::MAX,
+            },
+            max_elem: MatrixIndex { x: 0, y: 0 },
         }
+    }
+}
+impl MatrixBounded<Box<Chunk>> {
+    #[inline]
+    pub fn remove(&mut self, index: MatrixIndex) {
+        if self.matrix[index].take().is_some() {
+            let min_x = self.min_elem.x;
+            let max_x = self.max_elem.x;
+            let min_y = self.min_elem.y;
+            let max_y = self.max_elem.y;
+            self.min_elem.x = ChunkIndexType::MAX;
+            self.min_elem.y = ChunkIndexType::MAX;
+            self.max_elem.x = ChunkIndexType::MIN;
+            self.max_elem.y = ChunkIndexType::MIN;
+            self.len -= 1;
+            for y in min_y..=max_y {
+                for x in min_x..=max_x {
+                    let i = MatrixIndex { x, y };
+                    if self.matrix[i].is_some() {
+                        self.min_elem.x = self.min_elem.x.min(x);
+                        self.min_elem.y = self.min_elem.y.min(y);
+                        self.max_elem.x = self.max_elem.x.max(x);
+                        self.max_elem.y = self.max_elem.y.max(y);
+                    }
+                }
+            }
+        } else {
+            unreachable!()
+        }
+    }
+    #[inline]
+    pub fn insert(&mut self, index: MatrixIndex, chunk: Chunk) {
+        if self.matrix[index].is_some() {
+            unreachable!()
+        } else {
+            self.len += 1;
+        }
+        self.matrix[index] = Some(Box::new(chunk));
+        self.min_elem.x = self.min_elem.x.min(index.x);
+        self.min_elem.y = self.min_elem.y.min(index.y);
+        self.max_elem.x = self.max_elem.x.max(index.x);
+        self.max_elem.y = self.max_elem.y.max(index.y);
     }
 }
