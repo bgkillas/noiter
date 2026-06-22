@@ -1,8 +1,8 @@
 use crate::chunk::Chunk;
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, ChunkIndexType};
+use std::array;
 use std::hint::assert_unchecked;
 use std::ops::{Index, IndexMut};
-use std::{array, mem};
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
 }
@@ -44,6 +44,12 @@ impl MatrixIndex {
         }
     }
 }
+impl From<u16> for MatrixIndex {
+    fn from(value: u16) -> Self {
+        let [a, b] = value.to_ne_bytes();
+        Self { x: a, y: b }
+    }
+}
 impl<T> Matrix<T> {
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.elems.iter().flat_map(|elems| elems.iter())
@@ -56,14 +62,14 @@ impl<T> Matrix<T> {
             .as_flattened()
             .iter()
             .enumerate()
-            .map(|(i, cell)| unsafe { (mem::transmute::<u16, MatrixIndex>(i.strict_cast()), cell) })
+            .map(|(i, cell)| (i.strict_cast::<u16>().into(), cell))
     }
     pub fn iter_mut_enumerate(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
         self.elems
             .as_flattened_mut()
             .iter_mut()
             .enumerate()
-            .map(|(i, cell)| unsafe { (mem::transmute::<u16, MatrixIndex>(i.strict_cast()), cell) })
+            .map(|(i, cell)| (i.strict_cast::<u16>().into(), cell))
     }
 }
 impl<T> Index<MatrixIndex> for Matrix<T> {

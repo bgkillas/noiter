@@ -10,10 +10,19 @@ use bevy::sprite::Sprite;
 pub struct Cell {
     pub entity: Entity,
 }
-#[derive(Clone, Copy)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[cfg(target_endian = "big")]
 pub struct CellIndex {
     pub chunk_index: MatrixIndex,
     pub cell_index: MatrixIndex,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[cfg(target_endian = "little")]
+pub struct CellIndex {
+    pub cell_index: MatrixIndex,
+    pub chunk_index: MatrixIndex,
 }
 impl Cell {
     pub fn new(color: Color, index: CellIndex, commands: &mut Commands) -> Cell {
