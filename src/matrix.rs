@@ -129,13 +129,13 @@ impl MatrixBounded<Box<Chunk>> {
         }
     }
     #[inline]
-    pub fn insert(&mut self, index: MatrixIndex, chunk: Chunk) {
+    pub fn insert(&mut self, index: MatrixIndex, chunk: Box<Chunk>) {
         if self.matrix[index].is_some() {
             unreachable!()
         } else {
             self.len += 1;
         }
-        self.matrix[index] = Some(Box::new(chunk));
+        self.matrix[index] = Some(chunk);
         self.min_elem.x = self.min_elem.x.min(index.x);
         self.min_elem.y = self.min_elem.y.min(index.y);
         self.max_elem.x = self.max_elem.x.max(index.x);

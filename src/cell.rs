@@ -1,8 +1,14 @@
 use crate::matrix::MatrixIndex;
-pub type CellColor = [u8; 4];
-#[derive(Default)]
+use crate::{
+    CHUNK_HEIGHT, CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, PIXEL_HEIGHT, PIXEL_SCALE,
+    PIXEL_WIDTH,
+};
+use bevy::color::Color;
+use bevy::math::Vec2;
+use bevy::prelude::{Commands, Entity, Transform};
+use bevy::sprite::Sprite;
 pub struct Cell {
-    pub color: CellColor,
+    pub entity: Entity,
 }
 #[derive(Clone, Copy)]
 pub struct CellIndex {
@@ -10,7 +16,20 @@ pub struct CellIndex {
     pub cell_index: MatrixIndex,
 }
 impl Cell {
-    pub fn new(color: CellColor) -> Cell {
-        Self { color }
+    pub fn new(color: Color, index: CellIndex, commands: &mut Commands) -> Cell {
+        let x = PIXEL_SCALE
+            * (index.chunk_index.x() * CHUNK_MAP_WIDTH * CHUNK_WIDTH + index.cell_index.x()) as f32
+            + 0.5;
+        let y = PIXEL_SCALE
+            * (index.chunk_index.y() * CHUNK_MAP_HEIGHT * CHUNK_HEIGHT + index.cell_index.y())
+                as f32
+            + 0.5;
+        let entity = commands
+            .spawn((
+                Transform::from_xyz(x, y, 0.0),
+                Sprite::from_color(color, Vec2::new(PIXEL_WIDTH as f32, PIXEL_HEIGHT as f32)),
+            ))
+            .id();
+        Self { entity }
     }
 }
