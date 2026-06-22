@@ -1,7 +1,8 @@
 use crate::chunk::Chunk;
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, ChunkIndexType};
-use std::array;
+use std::hint::assert_unchecked;
 use std::ops::{Index, IndexMut};
+use std::{array, mem};
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
 }
@@ -11,7 +12,16 @@ pub struct MatrixBounded<T> {
     pub min_elem: MatrixIndex,
     pub max_elem: MatrixIndex,
 }
-#[derive(Clone, Copy)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[cfg(target_endian = "big")]
+pub struct MatrixIndex {
+    pub y: ChunkIndexType,
+    pub x: ChunkIndexType,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[cfg(target_endian = "little")]
 pub struct MatrixIndex {
     pub x: ChunkIndexType,
     pub y: ChunkIndexType,
@@ -23,6 +33,16 @@ impl MatrixIndex {
     pub fn y(self) -> usize {
         self.y.strict_cast()
     }
+    pub fn new(x: usize, y: usize) -> Self {
+        unsafe {
+            assert_unchecked(x < 256);
+            assert_unchecked(y < 256);
+        }
+        Self {
+            x: x.strict_cast(),
+            y: y.strict_cast(),
+        }
+    }
 }
 impl<T> Matrix<T> {
     pub fn iter(&self) -> impl Iterator<Item = &T> {
@@ -32,30 +52,18 @@ impl<T> Matrix<T> {
         self.elems.iter_mut().flat_map(|elems| elems.iter_mut())
     }
     pub fn iter_enumerate(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
-        self.elems.iter().enumerate().flat_map(|(y, elems)| {
-            elems.iter().enumerate().map(move |(x, cell)| {
-                (
-                    MatrixIndex {
-                        x: x.strict_cast(),
-                        y: y.strict_cast(),
-                    },
-                    cell,
-                )
-            })
-        })
+        self.elems
+            .as_flattened()
+            .iter()
+            .enumerate()
+            .map(|(i, cell)| unsafe { (mem::transmute::<u16, MatrixIndex>(i.strict_cast()), cell) })
     }
     pub fn iter_mut_enumerate(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
-        self.elems.iter_mut().enumerate().flat_map(|(y, elems)| {
-            elems.iter_mut().enumerate().map(move |(x, cell)| {
-                (
-                    MatrixIndex {
-                        x: x.strict_cast(),
-                        y: y.strict_cast(),
-                    },
-                    cell,
-                )
-            })
-        })
+        self.elems
+            .as_flattened_mut()
+            .iter_mut()
+            .enumerate()
+            .map(|(i, cell)| unsafe { (mem::transmute::<u16, MatrixIndex>(i.strict_cast()), cell) })
     }
 }
 impl<T> Index<MatrixIndex> for Matrix<T> {

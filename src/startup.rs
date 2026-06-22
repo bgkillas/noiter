@@ -12,10 +12,7 @@ pub fn startup(mut commands: Commands, mut chunk_map: ResMut<ChunkMap>) {
     commands.spawn((Camera2d, Transform::from_xyz(x, y, 0.0)));
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2..=CHUNK_MAP_HEIGHT / 2 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2..=CHUNK_MAP_WIDTH / 2 {
-            let chunk_index = MatrixIndex {
-                x: chunk_x_index.strict_cast(),
-                y: chunk_y_index.strict_cast(),
-            };
+            let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
             let chunk = Chunk::new(
                 chunk_index,
                 |cell_index| match cell_index.x % 4 + cell_index.y % 4 {

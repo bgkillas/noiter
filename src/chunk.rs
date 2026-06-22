@@ -17,10 +17,7 @@ impl Chunk {
         unsafe {
             for y in 0..CHUNK_MAP_HEIGHT {
                 for x in 0..CHUNK_MAP_HEIGHT {
-                    let cell_index = MatrixIndex {
-                        x: x.strict_cast(),
-                        y: y.strict_cast(),
-                    };
+                    let cell_index = MatrixIndex::new(x, y);
                     (*ret.as_mut_ptr()).cells.elems[y][x] = Cell::new(
                         f(cell_index),
                         CellIndex {
