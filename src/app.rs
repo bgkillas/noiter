@@ -11,7 +11,7 @@ use bevy::color::Color;
 use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::gizmos::AppGizmoBuilder;
 use bevy::gizmos::config::GizmoConfig;
-use bevy::image::{ImagePlugin, ImageSamplerDescriptor};
+use bevy::image::ImagePlugin;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 pub fn app_run() -> AppExit {
@@ -32,9 +32,7 @@ pub fn app_run() -> AppExit {
                 meta_check: AssetMetaCheck::Never,
                 ..AssetPlugin::default()
             })
-            .set(ImagePlugin {
-                default_sampler: ImageSamplerDescriptor::nearest(),
-            }),
+            .set(ImagePlugin::default_nearest()),
         PhysicsPlugins::default(),
         PhysicsDebugPlugin,
         MeshPickingPlugin,
