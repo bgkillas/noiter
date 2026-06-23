@@ -1,4 +1,4 @@
-pub type CellColor = [u8; 3];
+pub type CellColor = [u8; 4];
 pub struct Cell {
     pub color: CellColor,
 }

@@ -31,14 +31,14 @@ pub fn startup(
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
             let chunk = Chunk::new(|cell_index| match cell_index.x % 4 + cell_index.y % 4 {
-                0 => [255, 85, 85],
-                1 => [85, 255, 85],
-                2 => [85, 85, 255],
-                3 => [255, 85, 255],
-                4 => [255, 255, 85],
-                5 => [85, 255, 255],
-                6 => [255, 255, 255],
-                _ => [85, 85, 85],
+                0 => [255, 85, 85, 255],
+                1 => [85, 255, 85, 255],
+                2 => [85, 85, 255, 255],
+                3 => [255, 85, 255, 255],
+                4 => [255, 255, 85, 255],
+                5 => [85, 255, 255, 255],
+                6 => [255, 255, 255, 255],
+                _ => [85, 85, 85, 255],
             });
             chunk_map.chunks.insert(chunk_index, chunk);
         }
@@ -50,13 +50,13 @@ pub fn startup(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        vec![u8::MAX; 0],
+        vec![0; 0],
         TextureFormat::Rgba8Unorm,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
     let handle = images.add(image);
     commands.spawn((
-        WorldImage,
+        WorldImage::default(),
         Sprite::from_image(handle.clone()),
         Transform::from_scale(Vec3::splat(PIXEL_SCALE)),
     ));

@@ -1,10 +1,10 @@
-use crate::PIXEL_SCALE;
+use crate::{PIXEL_LENGTH, PIXEL_SCALE};
 use bevy::camera::Camera2d;
 use bevy::input::ButtonInput;
 use bevy::prelude::{KeyCode, MessageReader, Res, Single, Transform, With};
 use bevy::window::WindowResized;
-const CAMERA_MOVE_RATE_FAST: f32 = PIXEL_SCALE * 2.0;
-const CAMERA_MOVE_RATE: f32 = PIXEL_SCALE;
+const CAMERA_MOVE_RATE_FAST: f32 = 4.0 * PIXEL_SCALE / PIXEL_LENGTH as f32;
+const CAMERA_MOVE_RATE: f32 = 2.0 * PIXEL_SCALE / PIXEL_LENGTH as f32;
 pub fn align_camera(
     mut camera: Single<&mut Transform, With<Camera2d>>,
     mut resize_reader: MessageReader<WindowResized>,
