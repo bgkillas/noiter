@@ -1,14 +1,16 @@
-use crate::camera::move_camera;
+use crate::camera::{align_camera, move_camera};
 use crate::chunk_map::ChunkMap;
 use crate::startup::startup;
 use crate::update::update;
+use crate::world_image::{display_world, resize_world};
 use avian2d::PhysicsPlugins;
 use avian2d::debug_render::{PhysicsDebugPlugin, PhysicsGizmos};
 use bevy::DefaultPlugins;
-use bevy::app::{App, AppExit, PluginGroup, Startup, Update};
+use bevy::app::{App, AppExit, FixedUpdate, PluginGroup, Startup, Update};
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
 use bevy::color::Color;
 use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
+use bevy::ecs::schedule::IntoScheduleConfigs;
 use bevy::gizmos::AppGizmoBuilder;
 use bevy::gizmos::config::GizmoConfig;
 use bevy::image::ImagePlugin;
@@ -49,6 +51,10 @@ pub fn app_run() -> AppExit {
     );
     app.insert_resource(ChunkMap::default());
     app.add_systems(Startup, startup);
-    app.add_systems(Update, (update, move_camera));
+    app.add_systems(
+        Update,
+        (update, align_camera, (resize_world, display_world).chain()),
+    );
+    app.add_systems(FixedUpdate, move_camera);
     app.run()
 }
