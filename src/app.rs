@@ -1,8 +1,9 @@
-use crate::camera::{align_camera, move_camera};
+use crate::PIXEL_LENGTH;
+use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::ChunkMap;
 use crate::startup::startup;
 use crate::update::update;
-use crate::world_image::{display_world, resize_world};
+use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
 use avian2d::debug_render::{PhysicsDebugPlugin, PhysicsGizmos};
 use bevy::DefaultPlugins;
@@ -53,8 +54,13 @@ pub fn app_run() -> AppExit {
     app.add_systems(Startup, startup);
     app.add_systems(
         Update,
-        (update, align_camera, (resize_world, display_world).chain()),
+        (
+            update,
+            align_camera,
+            (on_resize_world, display_world).chain(),
+        ),
     );
-    app.add_systems(FixedUpdate, move_camera);
+    app.add_systems(FixedUpdate, (move_camera, zoom_camera));
+    app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

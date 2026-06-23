@@ -60,5 +60,5 @@ pub fn startup(
         Sprite::from_image(handle.clone()),
         Transform::from_scale(Vec3::splat(PIXEL_SCALE)),
     ));
-    commands.insert_resource(WorldImageHandle { handle });
+    commands.insert_resource(WorldImageHandle(handle));
 }
