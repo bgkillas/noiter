@@ -1,18 +1,19 @@
 use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::ChunkMap;
+use crate::collider_world::update_colliders;
 use crate::startup::startup;
 use crate::update::update;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
 use avian2d::debug_render::{PhysicsDebugPlugin, PhysicsGizmos};
 use bevy::DefaultPlugins;
-use bevy::app::{App, AppExit, FixedUpdate, PluginGroup, Startup, Update};
+use bevy::app::{App, AppExit, FixedUpdate, PluginGroup as _, Startup, Update};
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
 use bevy::color::Color;
 use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
-use bevy::ecs::schedule::IntoScheduleConfigs;
-use bevy::gizmos::AppGizmoBuilder;
+use bevy::ecs::schedule::IntoScheduleConfigs as _;
+use bevy::gizmos::AppGizmoBuilder as _;
 use bevy::gizmos::config::GizmoConfig;
 use bevy::image::ImagePlugin;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
@@ -57,6 +58,7 @@ pub fn app_run() -> AppExit {
         (
             update,
             align_camera,
+            update_colliders,
             (on_resize_world, display_world).chain(),
         ),
     );

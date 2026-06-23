@@ -28,12 +28,15 @@ pub struct MatrixIndex {
     pub y: ChunkIndexType,
 }
 impl MatrixIndex {
+    #[must_use]
     pub fn x(self) -> usize {
         self.x.strict_cast()
     }
+    #[must_use]
     pub fn y(self) -> usize {
         self.y.strict_cast()
     }
+    #[must_use]
     pub fn new(x: usize, y: usize) -> Self {
         unsafe {
             assert_unchecked(x < 256);
@@ -119,7 +122,6 @@ impl<T> Default for MatrixBounded<T> {
     }
 }
 impl MatrixBounded<Box<Chunk>> {
-    #[inline]
     pub fn remove(&mut self, index: MatrixIndex) {
         if self.matrix[index].take().is_some() {
             let min_x = self.min_elem.x;
@@ -146,7 +148,6 @@ impl MatrixBounded<Box<Chunk>> {
             unreachable!()
         }
     }
-    #[inline]
     pub fn insert(&mut self, index: MatrixIndex, chunk: Box<Chunk>) {
         if self.matrix[index].is_some() {
             unreachable!()
@@ -158,5 +159,13 @@ impl MatrixBounded<Box<Chunk>> {
         self.min_elem.y = self.min_elem.y.min(index.y);
         self.max_elem.x = self.max_elem.x.max(index.x);
         self.max_elem.y = self.max_elem.y.max(index.y);
+    }
+    pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &Chunk)> {
+        (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
+            (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {
+                let idx = MatrixIndex { x, y };
+                self.matrix[idx].as_ref().map(|c| (idx, &**c))
+            })
+        })
     }
 }

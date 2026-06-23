@@ -1,11 +1,14 @@
 use crate::cell::Cell;
 use crate::chunk::Chunk;
-use crate::matrix::{MatrixBounded, MatrixIndex};
+use crate::matrix::{Matrix, MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH};
 use bevy::ecs::resource::Resource;
+use bevy::prelude::Entity;
 #[derive(Resource, Default)]
 pub struct ChunkMap {
     pub chunks: MatrixBounded<Box<Chunk>>,
+    pub modified: Matrix<bool>,
+    pub collider_entities: Matrix<Option<Entity>>,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -49,11 +52,13 @@ impl From<(u16, u16)> for CellIndex {
     }
 }
 impl ChunkMap {
+    #[must_use]
     pub fn get(&self, index: CellIndex) -> Option<&Cell> {
         self.chunks[index.chunk_index]
             .as_ref()
             .map(|c| &c.cells[index.cell_index])
     }
+    #[must_use]
     pub fn get_mut(&mut self, index: CellIndex) -> Option<&mut Cell> {
         self.chunks[index.chunk_index]
             .as_mut()

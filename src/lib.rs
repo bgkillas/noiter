@@ -5,6 +5,7 @@ pub mod camera;
 pub mod cell;
 pub mod chunk;
 pub mod chunk_map;
+mod collider_world;
 pub mod matrix;
 mod startup;
 mod update;

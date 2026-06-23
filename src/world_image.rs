@@ -18,7 +18,6 @@ pub struct WorldImage {
 }
 #[derive(Resource, Deref, DerefMut)]
 pub struct WorldImageHandle(pub Handle<Image>);
-#[unsafe(no_mangle)]
 pub fn display_world(
     world_image_handle: Res<WorldImageHandle>,
     mut images: ResMut<Assets<Image>>,
@@ -26,7 +25,7 @@ pub fn display_world(
     camera: Single<&Transform, (With<Camera2d>, Without<WorldImage>)>,
     world: Res<ChunkMap>,
 ) {
-    let (mut transform, world_image) = world_image.into_inner();
+    let (mut transform, world_image_dim) = world_image.into_inner();
     let px = (camera.translation.x / PIXEL_SCALE).floor();
     transform.translation.x = px * PIXEL_SCALE;
     let py = (camera.translation.y / PIXEL_SCALE).floor();
@@ -34,10 +33,10 @@ pub fn display_world(
     let mut image = images.get_mut(&**world_image_handle).unwrap();
     let data = image.data.as_mut().unwrap();
     let (chunks, _) = data.as_chunks_mut::<4>();
-    let sx = px as u16 - world_image.width.div_floor(2);
-    let ex = px as u16 + world_image.width.div_ceil(2);
-    let sy = py as u16 - world_image.height.div_floor(2);
-    let ey = py as u16 + world_image.height.div_ceil(2);
+    let sx = px as u16 - world_image_dim.width.div_floor(2);
+    let ex = px as u16 + world_image_dim.width.div_ceil(2);
+    let sy = py as u16 - world_image_dim.height.div_floor(2);
+    let ey = py as u16 + world_image_dim.height.div_ceil(2);
     for (c, (x, y)) in chunks
         .iter_mut()
         .zip((sy..ey).rev().flat_map(|y| (sx..ex).map(move |x| (x, y))))

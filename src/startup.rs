@@ -42,6 +42,7 @@ pub fn startup(
                 6 => [255, 255, 255, 255],
                 _ => [85, 85, 85, 255],
             });
+            chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
         }
     }
@@ -64,7 +65,7 @@ pub fn startup(
                         _ => [85, 85, 85, 255],
                     };
                 }
-            })
+            });
         }
     }
     let image = Image::new(

@@ -24,12 +24,11 @@ avian2d = {version = "0.7.0", features = ["simd", "parallel"]}
 shapes = {version = "0.1.0", git = "https://github.com/bgkillas/helix"}
 #rand = "0.10.1"
 
-[workspace.lints.clippy]
+[lints.clippy]
 pedantic = {level = "warn", priority = -1}
 shadow_reuse = "warn"
 unused_trait_names = "warn"
 missing_inline_in_public_items = "warn"
-as-conversions = "warn"
 str-to-string = "warn"
 missing_panics_doc = "allow"
 missing_errors_doc = "allow"
@@ -39,3 +38,10 @@ missing_safety_doc = "allow"
 similar-names = "allow"
 too_many_arguments = "allow"
 type_complexity = "allow"
+missing-inline-in-public-items = "allow"
+needless_pass_by_value = "allow"
+
+cast_precision_loss = "allow"
+as_conversions = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
