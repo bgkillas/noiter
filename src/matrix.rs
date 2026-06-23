@@ -66,14 +66,14 @@ impl<T> Matrix<T> {
             .as_flattened()
             .iter()
             .zip(RangeFrom::from(0u16..))
-            .map(|(cell, i)| (i.into(), cell))
+            .map(|(cell, i)| (MatrixIndex::from(i), cell))
     }
     pub fn iter_mut_enumerate(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
         self.elems
             .as_flattened_mut()
             .iter_mut()
             .zip(RangeFrom::from(0u16..))
-            .map(|(cell, i)| (i.into(), cell))
+            .map(|(cell, i)| (MatrixIndex::from(i), cell))
     }
 }
 impl<T> Index<MatrixIndex> for Matrix<T> {

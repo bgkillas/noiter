@@ -1,5 +1,5 @@
 use crate::chunk::Chunk;
-use crate::chunk_map::ChunkMap;
+use crate::chunk_map::{CellIndex, ChunkMap};
 use crate::matrix::MatrixIndex;
 use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
@@ -13,6 +13,8 @@ use bevy::math::Vec3;
 use bevy::prelude::{ResMut, Transform};
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite::Sprite;
+use shapes::circumference::Circumference;
+use shapes::octant::octant;
 pub fn startup(
     mut commands: Commands,
     mut chunk_map: ResMut<ChunkMap>,
@@ -41,6 +43,28 @@ pub fn startup(
                 _ => [85, 85, 85, 255],
             });
             chunk_map.chunks.insert(chunk_index, chunk);
+        }
+    }
+    let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
+    let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
+    for r in 0..=128 {
+        for (dx, dy) in Circumference::new(r) {
+            octant(x0, y0, dx, dy, |_, x, y| {
+                if let Some(c) =
+                    chunk_map.get_mut(CellIndex::from((x.strict_cast(), y.strict_cast())))
+                {
+                    c.color = match r % 8 {
+                        0 => [255, 85, 85, 255],
+                        1 => [85, 255, 85, 255],
+                        2 => [85, 85, 255, 255],
+                        3 => [255, 85, 255, 255],
+                        4 => [255, 255, 85, 255],
+                        5 => [85, 255, 255, 255],
+                        6 => [255, 255, 255, 255],
+                        _ => [85, 85, 85, 255],
+                    };
+                }
+            })
         }
     }
     let image = Image::new(

@@ -1,5 +1,5 @@
 use crate::PIXEL_SCALE;
-use crate::chunk_map::ChunkMap;
+use crate::chunk_map::{CellIndex, ChunkMap};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
@@ -34,15 +34,16 @@ pub fn display_world(
     let mut image = images.get_mut(&**world_image_handle).unwrap();
     let data = image.data.as_mut().unwrap();
     let (chunks, _) = data.as_chunks_mut::<4>();
-    let sx = px as u16 - world_image.width / 2;
-    let ex = px as u16 + world_image.width / 2;
-    let sy = py as u16 - world_image.height / 2;
-    let ey = py as u16 + world_image.height / 2;
+    let sx = px as u16 - world_image.width.div_floor(2);
+    let ex = px as u16 + world_image.width.div_ceil(2);
+    let sy = py as u16 - world_image.height.div_floor(2);
+    let ey = py as u16 + world_image.height.div_ceil(2);
     for (c, (x, y)) in chunks
         .iter_mut()
         .zip((sy..ey).rev().flat_map(|y| (sx..ex).map(move |x| (x, y))))
     {
-        *c = if let Some(cell) = world.get(x, y) {
+        let idx = CellIndex::from((x, y));
+        *c = if let Some(cell) = world.get(idx) {
             cell.color
         } else {
             [0, 0, 0, 0]
@@ -76,8 +77,8 @@ pub fn resize_world(
     pixel_length: u32,
 ) {
     let mut image = images.get_mut(world_image_handle).unwrap();
-    let image_width = width / pixel_length + 2;
-    let image_height = height / pixel_length + 3;
+    let image_width = width.div_ceil(pixel_length) + 2;
+    let image_height = height.div_ceil(pixel_length) + 2;
     world_image.width = image_width.strict_cast::<u16>();
     world_image.height = image_height.strict_cast::<u16>();
     *image = Image::new(

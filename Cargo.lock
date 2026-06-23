@@ -3524,6 +3524,7 @@ version = "0.1.0"
 dependencies = [
  "avian2d",
  "bevy",
+ "shapes",
 ]
 
 [[package]]
@@ -4642,6 +4643,11 @@ dependencies = [
  "serde_core",
  "zmij",
 ]
+
+[[package]]
+name = "shapes"
+version = "0.1.0"
+source = "git+https://github.com/bgkillas/helix#f6396b9210b0deaa0cc6a5223d3e740162e0a925"
 
 [[package]]
 name = "sharded-slab"

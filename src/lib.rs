@@ -1,4 +1,5 @@
 #![feature(integer_casts)]
+#![feature(int_roundings)]
 pub mod app;
 pub mod camera;
 pub mod cell;

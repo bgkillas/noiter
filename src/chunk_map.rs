@@ -25,13 +25,13 @@ impl From<u32> for CellIndex {
     fn from(value: u32) -> Self {
         let width = (CHUNK_WIDTH * CHUNK_HEIGHT).strict_cast::<u32>();
         Self {
-            cell_index: (value % width).strict_cast::<u16>().into(),
-            chunk_index: (value / width).strict_cast::<u16>().into(),
+            cell_index: MatrixIndex::from((value % width).strict_cast::<u16>()),
+            chunk_index: MatrixIndex::from((value / width).strict_cast::<u16>()),
         }
     }
 }
-impl ChunkMap {
-    pub fn get(&self, x: u16, y: u16) -> Option<&Cell> {
+impl From<(u16, u16)> for CellIndex {
+    fn from((x, y): (u16, u16)) -> Self {
         let index_a = MatrixIndex::from(x);
         let index_b = MatrixIndex::from(y);
         let chunk_index = MatrixIndex {
@@ -42,8 +42,21 @@ impl ChunkMap {
             x: index_a.x,
             y: index_b.x,
         };
-        self.chunks[chunk_index]
+        Self {
+            cell_index,
+            chunk_index,
+        }
+    }
+}
+impl ChunkMap {
+    pub fn get(&self, index: CellIndex) -> Option<&Cell> {
+        self.chunks[index.chunk_index]
             .as_ref()
-            .map(|c| &c.cells[cell_index])
+            .map(|c| &c.cells[index.cell_index])
+    }
+    pub fn get_mut(&mut self, index: CellIndex) -> Option<&mut Cell> {
+        self.chunks[index.chunk_index]
+            .as_mut()
+            .map(|c| &mut c.cells[index.cell_index])
     }
 }

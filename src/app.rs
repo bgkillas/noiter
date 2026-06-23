@@ -23,7 +23,7 @@ pub fn app_run() -> AppExit {
         DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "noiter".into(),
+                    title: "noiter".to_owned(),
                     resizable: true,
                     fit_canvas_to_parent: true,
                     present_mode: PresentMode::Immediate,
