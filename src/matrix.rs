@@ -47,9 +47,10 @@ impl MatrixIndex {
 }
 impl From<u16> for MatrixIndex {
     fn from(value: u16) -> Self {
+        let width = CHUNK_WIDTH.strict_cast::<u16>();
         Self {
-            x: (value % CHUNK_WIDTH.strict_cast::<u16>()).strict_cast(),
-            y: (value / CHUNK_WIDTH.strict_cast::<u16>()).strict_cast(),
+            x: (value % width).strict_cast(),
+            y: (value / width).strict_cast(),
         }
     }
 }

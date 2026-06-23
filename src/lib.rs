@@ -7,7 +7,7 @@ pub mod chunk_map;
 pub mod matrix;
 mod startup;
 mod update;
-pub const PIXEL_SCALE: f32 = 1.0;
+pub const PIXEL_SCALE: f32 = 1.0 / 256.0;
 pub const PIXEL_WIDTH: usize = 4;
 pub const PIXEL_HEIGHT: usize = 4;
 pub const CHUNK_WIDTH: usize = 256;

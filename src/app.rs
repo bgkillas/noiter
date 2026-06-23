@@ -1,3 +1,4 @@
+use crate::camera::move_camera;
 use crate::chunk_map::ChunkMap;
 use crate::startup::startup;
 use crate::update::update;
@@ -50,6 +51,6 @@ pub fn app_run() -> AppExit {
     );
     app.insert_resource(ChunkMap::default());
     app.add_systems(Startup, startup);
-    app.add_systems(Update, update);
+    app.add_systems(Update, (update, move_camera));
     app.run()
 }
