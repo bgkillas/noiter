@@ -6,12 +6,12 @@ use avian2d::prelude::{Collider, RigidBody};
 use bevy::math::Vec3;
 use bevy::prelude::{Commands, ResMut, Transform};
 pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
-    let mut vec = Vec::<IVector>::with_capacity(CHUNK_WIDTH * CHUNK_HEIGHT);
     let world = world_ref.into_inner();
     for (i, chunk) in world.chunks.iter() {
         if !world.modified[i] {
             continue;
         }
+        let mut vec = Vec::<IVector>::with_capacity(CHUNK_WIDTH * CHUNK_HEIGHT);
         world.modified[i] = false;
         let base_vector = IVector::new(
             (CHUNK_WIDTH.strict_cast::<u32>() * i.x.strict_cast::<u32>()).cast_signed(),
@@ -33,6 +33,6 @@ pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
             ))
             .id();
         world.collider_entities[i] = Some(ent);
-        vec.clear();
+        return;
     }
 }
