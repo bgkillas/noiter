@@ -18,7 +18,7 @@ pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
             (CHUNK_HEIGHT.strict_cast::<u32>() * i.y.strict_cast::<u32>()).cast_signed(),
         );
         for (i, _) in chunk.cells.iter_enumerate() {
-            vec.push(base_vector + IVector::new(i.x.strict_cast(), i.y.strict_cast()));
+            vec.push(IVector::new(i.x.strict_cast(), i.y.strict_cast()));
         }
         let ent = commands
             .spawn((
