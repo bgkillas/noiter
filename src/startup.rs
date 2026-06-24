@@ -1,3 +1,4 @@
+use crate::cell::CellColor;
 use crate::chunk::Chunk;
 use crate::chunk_map::{CellIndex, ChunkMap};
 use crate::matrix::MatrixIndex;
@@ -31,25 +32,37 @@ pub fn startup(
         Projection::Orthographic(ortho),
         Transform::from_xyz(x, y, 0.0),
     ));
+    let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
+    let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 1..=CHUNK_MAP_HEIGHT / 2 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
-            let chunk = Chunk::new(|cell_index| match cell_index.x % 4 + cell_index.y % 4 {
-                0 => [255, 85, 85, 255],
-                1 => [85, 255, 85, 255],
-                2 => [85, 85, 255, 255],
-                3 => [255, 85, 255, 255],
-                4 => [255, 255, 85, 255],
-                5 => [85, 255, 255, 255],
-                6 => [255, 255, 255, 255],
-                _ => [85, 85, 85, 255],
+            let chunk = Chunk::new(|cell_index| {
+                if y0.abs_diff(
+                    cell_index.y.strict_cast::<usize>()
+                        + CHUNK_HEIGHT * chunk_index.y.strict_cast::<usize>(),
+                ) > x0.abs_diff(
+                    cell_index.x.strict_cast::<usize>()
+                        + CHUNK_WIDTH * chunk_index.x.strict_cast::<usize>(),
+                ) {
+                    CellColor::AIR
+                } else {
+                    match cell_index.x % 4 + cell_index.y % 4 {
+                        0 => CellColor::new(255, 85, 85, 255),
+                        1 => CellColor::new(85, 255, 85, 255),
+                        2 => CellColor::new(85, 85, 255, 255),
+                        3 => CellColor::new(255, 85, 255, 255),
+                        4 => CellColor::new(255, 255, 85, 255),
+                        5 => CellColor::new(85, 255, 255, 255),
+                        6 => CellColor::new(255, 255, 255, 255),
+                        _ => CellColor::new(85, 85, 85, 255),
+                    }
+                }
             });
             chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
         }
     }
-    let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
-    let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
     for r in 0..=128 {
         for (dx, dy) in Circumference::new(r) {
             octant(x0, y0, dx, dy, |_, x, y| {
@@ -57,14 +70,14 @@ pub fn startup(
                     chunk_map.get_mut(CellIndex::from((x.strict_cast(), y.strict_cast())))
                 {
                     c.color = match r % 8 {
-                        0 => [255, 85, 85, 255],
-                        1 => [85, 255, 85, 255],
-                        2 => [85, 85, 255, 255],
-                        3 => [255, 85, 255, 255],
-                        4 => [255, 255, 85, 255],
-                        5 => [85, 255, 255, 255],
-                        6 => [255, 255, 255, 255],
-                        _ => [85, 85, 85, 255],
+                        0 => CellColor::new(255, 85, 85, 255),
+                        1 => CellColor::new(85, 255, 85, 255),
+                        2 => CellColor::new(85, 85, 255, 255),
+                        3 => CellColor::new(255, 85, 255, 255),
+                        4 => CellColor::new(255, 255, 85, 255),
+                        5 => CellColor::new(85, 255, 255, 255),
+                        6 => CellColor::new(255, 255, 255, 255),
+                        _ => CellColor::new(85, 85, 85, 255),
                     };
                 }
             });
@@ -94,6 +107,14 @@ pub fn startup(
         Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
         Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
         Transform::from_xyz(x, y + PIXEL_SCALE * 3.0 * CHUNK_HEIGHT as f32, 0.0),
+    ));
+    commands.spawn((
+        RigidBody::Static,
+        GravityScale(4.0 * PIXEL_SCALE),
+        SleepingDisabled,
+        Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
+        Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
+        Transform::from_xyz(x, y + PIXEL_SCALE * 2.0 * CHUNK_HEIGHT as f32, 0.0),
     ));
     commands.insert_resource(WorldImageHandle(handle));
 }

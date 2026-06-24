@@ -1,4 +1,5 @@
 use crate::PIXEL_SCALE;
+use crate::cell::CellColor;
 use crate::chunk_map::{CellIndex, ChunkMap};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
@@ -42,11 +43,11 @@ pub fn display_world(
         .zip((sy..ey).rev().flat_map(|y| (sx..ex).map(move |x| (x, y))))
     {
         let idx = CellIndex::from((x, y));
-        *c = if let Some(cell) = world.get(idx) {
+        *c = <[u8; 4]>::from(if let Some(cell) = world.get(idx) {
             cell.color
         } else {
-            [0, 0, 0, 0]
-        };
+            CellColor::AIR
+        });
     }
 }
 pub fn on_resize_world(
