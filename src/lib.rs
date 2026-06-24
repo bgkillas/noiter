@@ -10,7 +10,7 @@ pub mod matrix;
 mod startup;
 mod update;
 mod world_image;
-pub const PIXEL_SCALE: f32 = 1.0 / 256.0;
+pub const PIXEL_SCALE: f32 = 1.0;
 pub const PIXEL_LENGTH: u32 = 16;
 pub const CHUNK_WIDTH: usize = 256;
 pub const CHUNK_HEIGHT: usize = 256;

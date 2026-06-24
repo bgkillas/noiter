@@ -108,13 +108,5 @@ pub fn startup(
         Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
         Transform::from_xyz(x, y + PIXEL_SCALE * 3.0 * CHUNK_HEIGHT as f32, 0.0),
     ));
-    commands.spawn((
-        RigidBody::Static,
-        GravityScale(4.0 * PIXEL_SCALE),
-        SleepingDisabled,
-        Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
-        Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
-        Transform::from_xyz(x, y + PIXEL_SCALE * 2.0 * CHUNK_HEIGHT as f32, 0.0),
-    ));
     commands.insert_resource(WorldImageHandle(handle));
 }

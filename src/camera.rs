@@ -25,9 +25,9 @@ pub fn move_camera(
     pixel_length: Res<PixelLength>,
 ) {
     let move_rate = if kb_input.pressed(KeyCode::ShiftLeft) {
-        4.0 * PIXEL_SCALE / **pixel_length as f32
+        8.0 * PIXEL_SCALE / **pixel_length as f32
     } else {
-        2.0 * PIXEL_SCALE / **pixel_length as f32
+        4.0 * PIXEL_SCALE / **pixel_length as f32
     };
     if kb_input.pressed(KeyCode::KeyW) {
         camera.translation.y += move_rate;
