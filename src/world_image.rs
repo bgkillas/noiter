@@ -77,8 +77,8 @@ pub fn resize_world(
     pixel_length: u32,
 ) {
     let mut image = images.get_mut(world_image_handle).unwrap();
-    let image_width = width.div_ceil(pixel_length) + 2;
-    let image_height = height.div_ceil(pixel_length) + 2;
+    let image_width = (width.div_ceil(pixel_length) + 2).next_multiple_of(2);
+    let image_height = (height.div_ceil(pixel_length) + 2).next_multiple_of(2);
     world_image.width = image_width.strict_cast::<u16>();
     world_image.height = image_height.strict_cast::<u16>();
     *image = Image::new(
