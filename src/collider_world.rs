@@ -29,6 +29,9 @@ pub fn update_colliders(
             }
             vec.push(IVector::new(i.x.strict_cast(), i.y.strict_cast()));
         }
+        if vec.is_empty() {
+            continue;
+        }
         let collider = Collider::voxels(Vector::splat(1.0), &vec);
         if let Some(ent) = world.collider_entities[i] {
             let mut old_collider = colliders.get_mut(ent).unwrap();

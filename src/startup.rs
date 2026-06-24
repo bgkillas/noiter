@@ -34,8 +34,8 @@ pub fn startup(
     ));
     let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
     let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
-    for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 1..=CHUNK_MAP_HEIGHT / 2 {
-        for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
+    for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 2..=CHUNK_MAP_HEIGHT / 2 + 1 {
+        for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 2..=CHUNK_MAP_WIDTH / 2 + 1 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
             let chunk = Chunk::new(|cell_index| {
                 if y0.abs_diff(
