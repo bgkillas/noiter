@@ -6,17 +6,13 @@ use crate::startup::startup;
 use crate::update::update;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
-use avian2d::debug_render::{PhysicsDebugPlugin, PhysicsGizmos};
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, FixedUpdate, PluginGroup as _, Startup, Update};
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
-use bevy::color::Color;
-use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::ecs::schedule::IntoScheduleConfigs as _;
+#[cfg(feature = "colliders")]
 use bevy::gizmos::AppGizmoBuilder as _;
-use bevy::gizmos::config::GizmoConfig;
 use bevy::image::ImagePlugin;
-use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 pub fn app_run() -> AppExit {
     let mut app = App::new();
@@ -38,18 +34,20 @@ pub fn app_run() -> AppExit {
             })
             .set(ImagePlugin::default_nearest()),
         PhysicsPlugins::default(),
-        PhysicsDebugPlugin,
-        MeshPickingPlugin,
-        FpsOverlayPlugin::default(),
+        #[cfg(feature = "colliders")]
+        avian2d::debug_render::PhysicsDebugPlugin,
+        #[cfg(feature = "fps")]
+        bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default(),
     ));
+    #[cfg(feature = "colliders")]
     app.insert_gizmo_config(
-        PhysicsGizmos {
+        avian2d::debug_render::PhysicsGizmos {
             axis_lengths: None,
-            collider_color: Some(Color::srgba_u8(0, 0, 0, 127)),
+            collider_color: Some(bevy::color::Color::srgba_u8(0, 0, 0, 127)),
             sleeping_color_multiplier: None,
-            ..PhysicsGizmos::default()
+            ..avian2d::debug_render::PhysicsGizmos::default()
         },
-        GizmoConfig::default(),
+        bevy::gizmos::config::GizmoConfig::default(),
     );
     app.insert_resource(ChunkMap::default());
     app.add_systems(Startup, startup);
