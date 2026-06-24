@@ -8,6 +8,7 @@ use bevy::prelude::Entity;
 pub struct ChunkMap {
     pub chunks: MatrixBounded<Box<Chunk>>,
     pub modified: Matrix<bool>,
+    pub any_modified: bool,
     pub collider_entities: Matrix<Option<Entity>>,
 }
 #[repr(C)]

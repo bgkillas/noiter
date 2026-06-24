@@ -5,8 +5,8 @@ use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
 use bevy::prelude::{
-    Component, Deref, DerefMut, MessageReader, Res, ResMut, Resource, Single, Transform, With,
-    Without,
+    Component, Deref, DerefMut, Local, MessageReader, Res, ResMut, Resource, Single, Transform,
+    With, Without,
 };
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::window::WindowResized;
@@ -17,6 +17,11 @@ pub struct WorldImage {
     pub width: u16,
     pub height: u16,
 }
+#[derive(Default, PartialEq, Clone, Copy)]
+pub struct CameraPos {
+    px: u16,
+    py: u16,
+}
 #[derive(Resource, Deref, DerefMut)]
 pub struct WorldImageHandle(pub Handle<Image>);
 pub fn display_world(
@@ -24,19 +29,29 @@ pub fn display_world(
     mut images: ResMut<Assets<Image>>,
     world_image: Single<(&mut Transform, &WorldImage), Without<Camera2d>>,
     camera: Single<&Transform, (With<Camera2d>, Without<WorldImage>)>,
-    world: Res<ChunkMap>,
+    mut world: ResMut<ChunkMap>,
+    mut last_pos: Local<CameraPos>,
 ) {
     let (mut transform, world_image_dim) = world_image.into_inner();
     let px = (camera.translation.x / PIXEL_SCALE).floor();
-    transform.translation.x = px * PIXEL_SCALE;
     let py = (camera.translation.y / PIXEL_SCALE).floor();
+    let pos = CameraPos {
+        px: px as u16,
+        py: py as u16,
+    };
+    if *last_pos == pos && !world.any_modified {
+        return;
+    }
+    *last_pos = pos;
+    world.any_modified = false;
+    transform.translation.x = px * PIXEL_SCALE;
     transform.translation.y = py * PIXEL_SCALE;
     let mut image = images.get_mut(&**world_image_handle).unwrap();
     let data = image.data.as_mut().unwrap();
     let (chunks, _) = data.as_chunks_mut::<4>();
-    let sx = px as u16 - world_image_dim.width.div_floor(2);
-    let ex = px as u16 + world_image_dim.width.div_ceil(2);
-    let ey = py as u16 + world_image_dim.height.div_ceil(2);
+    let sx = pos.px - world_image_dim.width.div_floor(2);
+    let ey = pos.py + world_image_dim.height.div_ceil(2);
+    let ex = sx + world_image_dim.width;
     write_data(&world, chunks, sx, ex, ey);
 }
 fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
@@ -59,6 +74,7 @@ pub fn on_resize_world(
     mut images: ResMut<Assets<Image>>,
     mut world_image: Single<&mut WorldImage>,
     pixel_length: Res<PixelLength>,
+    mut world: ResMut<ChunkMap>,
 ) {
     if let Some(size) = resize_reader.read().last() {
         resize_world(
@@ -68,6 +84,7 @@ pub fn on_resize_world(
             &mut images,
             &mut world_image,
             **pixel_length,
+            &mut world,
         );
     }
 }
@@ -78,7 +95,9 @@ pub fn resize_world(
     images: &mut Assets<Image>,
     world_image: &mut WorldImage,
     pixel_length: u32,
+    world: &mut ChunkMap,
 ) {
+    world.any_modified = true;
     let mut image = images.get_mut(world_image_handle).unwrap();
     let image_width = (width.div_ceil(pixel_length) + 2).next_multiple_of(2);
     let image_height = (height.div_ceil(pixel_length) + 2).next_multiple_of(2);

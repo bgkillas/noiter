@@ -34,6 +34,7 @@ pub fn startup(
     ));
     let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
     let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
+    chunk_map.any_modified = true;
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 2..=CHUNK_MAP_HEIGHT / 2 + 1 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 2..=CHUNK_MAP_WIDTH / 2 + 1 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
@@ -100,13 +101,15 @@ pub fn startup(
         Sprite::from_image(handle.clone()),
         Transform::from_scale(Vec3::splat(PIXEL_SCALE)),
     ));
-    commands.spawn((
-        RigidBody::Dynamic,
-        GravityScale(4.0 * PIXEL_SCALE),
-        SleepingDisabled,
-        Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
-        Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
-        Transform::from_xyz(x, y + PIXEL_SCALE * 3.0 * CHUNK_HEIGHT as f32, 0.0),
-    ));
+    for i in 2..8 {
+        commands.spawn((
+            RigidBody::Dynamic,
+            GravityScale(4.0 * PIXEL_SCALE),
+            SleepingDisabled,
+            Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
+            Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
+            Transform::from_xyz(x, y + PIXEL_SCALE * i as f32 * CHUNK_HEIGHT as f32, 0.0),
+        ));
+    }
     commands.insert_resource(WorldImageHandle(handle));
 }
