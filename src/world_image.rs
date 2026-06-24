@@ -36,18 +36,21 @@ pub fn display_world(
     let (chunks, _) = data.as_chunks_mut::<4>();
     let sx = px as u16 - world_image_dim.width.div_floor(2);
     let ex = px as u16 + world_image_dim.width.div_ceil(2);
-    let sy = py as u16 - world_image_dim.height.div_floor(2);
     let ey = py as u16 + world_image_dim.height.div_ceil(2);
-    for (c, (x, y)) in chunks
-        .iter_mut()
-        .zip((sy..ey).rev().flat_map(|y| (sx..ex).map(move |x| (x, y))))
-    {
-        let idx = CellIndex::from((x, y));
-        *c = <[u8; 4]>::from(if let Some(cell) = world.get(idx) {
-            cell.color
-        } else {
-            CellColor::AIR
-        });
+    write_data(&world, chunks, sx, ex, ey);
+}
+fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
+    let mut y = ey;
+    for arr in chunks.chunks_exact_mut((ex - sx).strict_cast()) {
+        y -= 1;
+        for (x, c) in (sx..).zip(arr.iter_mut()) {
+            let idx = CellIndex::from((x, y));
+            *c = <[u8; 4]>::from(if let Some(cell) = world.get(idx) {
+                cell.color
+            } else {
+                CellColor::AIR
+            });
+        }
     }
 }
 pub fn on_resize_world(
