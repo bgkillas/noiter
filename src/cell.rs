@@ -1,10 +1,16 @@
+use crate::cells::CELLS;
+pub struct CellData {
+    pub id: usize,
+    pub color: CellColor,
+    pub name: &'static str,
+}
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
 pub struct CellColor {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 impl From<CellColor> for [u8; 4] {
     fn from(value: CellColor) -> Self {
@@ -24,11 +30,16 @@ impl CellColor {
 }
 pub struct Cell {
     pub color: CellColor,
+    pub cell_data: &'static CellData,
 }
 impl Cell {
     #[must_use]
-    pub fn new(color: CellColor) -> Self {
-        Self { color }
+    pub fn new(id: usize) -> Self {
+        let cell_data = &CELLS[id];
+        Self {
+            color: cell_data.color,
+            cell_data,
+        }
     }
     #[must_use]
     pub fn is_air(&self) -> bool {

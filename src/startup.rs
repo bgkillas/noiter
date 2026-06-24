@@ -1,4 +1,4 @@
-use crate::cell::CellColor;
+use crate::cell::Cell;
 use crate::chunk::Chunk;
 use crate::chunk_map::{CellIndex, ChunkMap};
 use crate::matrix::MatrixIndex;
@@ -46,20 +46,19 @@ pub fn startup(
                     cell_index.x.strict_cast::<usize>()
                         + CHUNK_WIDTH * chunk_index.x.strict_cast::<usize>(),
                 ) {
-                    CellColor::AIR
+                    0
                 } else {
-                    match cell_index.x % 4 + cell_index.y % 4 {
-                        0 => CellColor::new(255, 85, 85, 255),
-                        1 => CellColor::new(85, 255, 85, 255),
-                        2 => CellColor::new(85, 85, 255, 255),
-                        3 => CellColor::new(255, 85, 255, 255),
-                        4 => CellColor::new(255, 255, 85, 255),
-                        5 => CellColor::new(85, 255, 255, 255),
-                        6 => CellColor::new(255, 255, 255, 255),
-                        _ => CellColor::new(85, 85, 85, 255),
-                    }
+                    (cell_index.x % 4 + cell_index.y % 4 + 1).strict_cast()
                 }
             });
+            chunk_map.modified[chunk_index] = true;
+            chunk_map.chunks.insert(chunk_index, chunk);
+        }
+    }
+    for chunk_y_index in CHUNK_MAP_HEIGHT / 2 + 4..=CHUNK_MAP_HEIGHT / 2 + 5 {
+        for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
+            let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
+            let chunk = Chunk::new(|_| 5);
             chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
         }
@@ -70,16 +69,7 @@ pub fn startup(
                 if let Some(c) =
                     chunk_map.get_mut(CellIndex::from((x.strict_cast(), y.strict_cast())))
                 {
-                    c.color = match r % 8 {
-                        0 => CellColor::new(255, 85, 85, 255),
-                        1 => CellColor::new(85, 255, 85, 255),
-                        2 => CellColor::new(85, 85, 255, 255),
-                        3 => CellColor::new(255, 85, 255, 255),
-                        4 => CellColor::new(255, 255, 85, 255),
-                        5 => CellColor::new(85, 255, 255, 255),
-                        6 => CellColor::new(255, 255, 255, 255),
-                        _ => CellColor::new(85, 85, 85, 255),
-                    };
+                    *c = Cell::new(r % 8 + 1);
                 }
             });
         }

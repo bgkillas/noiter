@@ -3,6 +3,7 @@
 pub mod app;
 pub mod camera;
 pub mod cell;
+mod cells;
 pub mod chunk;
 pub mod chunk_map;
 mod collider_world;
