@@ -55,7 +55,7 @@ pub fn app_run() -> AppExit {
         bevy::gizmos::config::GizmoConfig::default(),
     );
     app.insert_resource(ChunkMap::default());
-    app.insert_resource(ClearColor(Color::srgba_u32(0xa6e7_ffff)));
+    app.insert_resource(ClearColor(Color::srgba_u32(0x96b7_ddff)));
     app.add_systems(Startup, startup);
     app.add_systems(
         Update,

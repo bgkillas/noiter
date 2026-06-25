@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
-[profile.release]
+[profile.release_lto]
+inherits = "release"
 lto = true
 strip = true
 panic = "abort"
-incremental = true
 codegen-units = 1
+opt-level = 3
+
+[profile.release]
 opt-level = 3
 
 [profile.dev]

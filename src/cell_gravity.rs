@@ -2,10 +2,14 @@ use crate::CHUNK_HEIGHT;
 use crate::cell::CellType;
 use crate::chunk_map::ChunkMap;
 use crate::matrix::MatrixIndex;
-use bevy::prelude::ResMut;
+use bevy::prelude::{Local, ResMut};
 use std::mem;
 use std::range::RangeInclusive;
-pub fn cell_gravity(mut world: ResMut<ChunkMap>) {
+const SECTIONS: usize = 256;
+pub fn cell_gravity(mut world: ResMut<ChunkMap>, mut num: Local<usize>) {
+    if *num == SECTIONS {
+        *num = 0;
+    }
     for y in world.chunks.min_elem.y..=world.chunks.max_elem.y {
         for x in world.chunks.min_elem.x..=world.chunks.max_elem.x {
             let chunk_index = MatrixIndex { x, y };
@@ -22,11 +26,16 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>) {
                 continue;
             };
             let mut any_changed = false;
-            for i in RangeInclusive::from(0u16..=u16::MAX) {
+            let mut upper_any_changed = false;
+            let mut lower_any_changed = false;
+            for i in RangeInclusive::from(
+                (*num * u16::MAX.strict_cast::<usize>() / SECTIONS).strict_cast::<u16>()
+                    ..=((*num + 1) * u16::MAX.strict_cast::<usize>() / SECTIONS)
+                        .strict_cast::<u16>(),
+            ) {
                 let idx = MatrixIndex::from(i);
                 match chunk[idx].cell_type {
                     CellType::Liquid => {
-                        any_changed = true;
                         if idx.y == 0 {
                             let lidx = MatrixIndex {
                                 x: idx.x,
@@ -35,22 +44,27 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>) {
                             if let Some(lc) = lower.as_mut()
                                 && lc[lidx].cell_type == CellType::Air
                             {
+                                any_changed = true;
+                                lower_any_changed = true;
                                 mem::swap(&mut chunk[idx], &mut lc[lidx]);
                             }
                         } else if chunk[idx - (0, 1)].cell_type == CellType::Air {
+                            any_changed = true;
                             chunk.cells.swap(idx, idx - (0, 1));
                         }
                     }
                     CellType::Gas => {
-                        any_changed = true;
                         if idx.y == (CHUNK_HEIGHT - 1).strict_cast() {
                             let uidx = MatrixIndex { x: idx.x, y: 0 };
                             if let Some(uc) = upper.as_mut()
                                 && uc[uidx].cell_type == CellType::Air
                             {
+                                any_changed = true;
+                                upper_any_changed = true;
                                 mem::swap(&mut chunk[idx], &mut uc[uidx]);
                             }
                         } else if chunk[idx + (0, 1)].cell_type == CellType::Air {
+                            any_changed = true;
                             chunk.cells.swap(idx, idx + (0, 1));
                         }
                     }
@@ -58,9 +72,15 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>) {
                 }
             }
             if any_changed {
-                chunk.modified = true;
+                if upper_any_changed {
+                    //TODO
+                }
+                if lower_any_changed {
+                    //TODO
+                }
                 world.any_modified = true;
             }
         }
     }
+    *num += 1;
 }

@@ -8,13 +8,15 @@ pub struct ChunkCollider;
 pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
     let world = world_ref.into_inner();
     for (i, chunk) in world.chunks.iter_mut() {
-        if chunk.voxels == 0 {
-            if let Some(ent) = chunk.collider.take() {
-                commands.entity(ent).despawn();
-            }
+        if chunk.modified {
+            chunk.modified = false;
             continue;
         }
-        if chunk.collider.is_some() {
+        if let Some(ent) = chunk.collider {
+            commands.entity(ent).despawn();
+        }
+        if chunk.voxels == 0 {
+            chunk.collider = None;
             continue;
         }
         let base_vector = IVector::new(
