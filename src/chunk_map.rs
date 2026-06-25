@@ -1,15 +1,12 @@
 use crate::cell::Cell;
 use crate::chunk::Chunk;
-use crate::matrix::{Matrix, MatrixBounded, MatrixIndex};
+use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH};
 use bevy::ecs::resource::Resource;
-use bevy::prelude::Entity;
 #[derive(Resource, Default)]
 pub struct ChunkMap {
-    pub chunks: MatrixBounded<Box<Chunk>>,
-    pub modified: Matrix<bool>,
+    pub chunks: MatrixBounded<Chunk>,
     pub any_modified: bool,
-    pub collider_entities: Matrix<Option<Entity>>,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]

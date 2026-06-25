@@ -51,7 +51,6 @@ pub fn startup(
                     (cell_index.x % 4 + cell_index.y % 4 + 1).strict_cast()
                 }
             });
-            chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
         }
     }
@@ -59,7 +58,6 @@ pub fn startup(
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
             let chunk = Chunk::new(|_| 2);
-            chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
         }
     }
@@ -68,7 +66,6 @@ pub fn startup(
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
             if chunk_map.chunks[chunk_index].is_none() {
                 let chunk = Chunk::new(|_| 0);
-                chunk_map.modified[chunk_index] = true;
                 chunk_map.chunks.insert(chunk_index, chunk);
             }
         }

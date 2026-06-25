@@ -58,8 +58,8 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>) {
                 }
             }
             if any_changed {
+                chunk.modified = true;
                 world.any_modified = true;
-                world.modified[chunk_index] = true;
             }
         }
     }

@@ -1,22 +1,29 @@
 use crate::CHUNK_MAP_HEIGHT;
 use crate::cell::Cell;
 use crate::matrix::{Matrix, MatrixIndex};
+use bevy::prelude::Entity;
 use std::ops::{Index, IndexMut};
-#[repr(transparent)]
 pub struct Chunk {
-    pub cells: Matrix<Cell>,
+    pub cells: Box<Matrix<Cell>>,
+    pub modified: bool,
+    pub collider: Option<Entity>,
 }
 impl Chunk {
-    pub fn new(mut f: impl FnMut(MatrixIndex) -> usize) -> Box<Self> {
-        let mut ret = Box::<Self>::new_uninit();
+    pub fn new(mut f: impl FnMut(MatrixIndex) -> usize) -> Self {
+        let mut cells = Box::<Matrix<Cell>>::new_uninit();
         unsafe {
             for y in 0..CHUNK_MAP_HEIGHT {
                 for x in 0..CHUNK_MAP_HEIGHT {
                     let cell_index = MatrixIndex::new(x, y);
-                    (*ret.as_mut_ptr()).cells.elems[y][x] = Cell::new(f(cell_index));
+                    *cells.as_mut_ptr().as_mut().unwrap().index_mut(cell_index) =
+                        Cell::new(f(cell_index));
                 }
             }
-            ret.assume_init()
+            Self {
+                cells: cells.assume_init(),
+                modified: true,
+                collider: None,
+            }
         }
     }
 }
