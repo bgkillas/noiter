@@ -23,6 +23,7 @@ default = ["fps", "debug"]
 colliders = []
 fps = ["bevy/bevy_dev_tools"]
 debug = ["bevy/debug"]
+tracy = ["bevy/trace_tracy"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

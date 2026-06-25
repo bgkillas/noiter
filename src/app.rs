@@ -4,7 +4,6 @@ use crate::cell_gravity::cell_gravity;
 use crate::chunk_map::ChunkMap;
 use crate::collider_world::update_colliders;
 use crate::startup::startup;
-use crate::update::update;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
@@ -60,7 +59,6 @@ pub fn app_run() -> AppExit {
     app.add_systems(
         Update,
         (
-            update,
             align_camera,
             update_colliders,
             (on_resize_world, display_world).chain(),

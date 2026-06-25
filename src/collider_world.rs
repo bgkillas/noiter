@@ -8,10 +8,10 @@ pub struct ChunkCollider;
 pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
     let world = world_ref.into_inner();
     for (i, chunk) in world.chunks.iter_mut() {
-        if chunk.modified {
-            chunk.modified = false;
+        if !chunk.modified {
             continue;
         }
+        chunk.modified = false;
         if let Some(ent) = chunk.collider {
             commands.entity(ent).despawn();
         }

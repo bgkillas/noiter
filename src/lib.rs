@@ -13,7 +13,6 @@ pub mod chunk_map;
 pub mod collider_world;
 pub mod matrix;
 pub mod startup;
-pub mod update;
 pub mod world_image;
 extern crate test;
 pub const PIXEL_SCALE: f32 = 1.0;
