@@ -1,5 +1,6 @@
 use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
+use crate::cell_gravity::cell_gravity;
 use crate::chunk_map::ChunkMap;
 use crate::collider_world::update_colliders;
 use crate::startup::startup;
@@ -13,6 +14,7 @@ use bevy::ecs::schedule::IntoScheduleConfigs as _;
 #[cfg(feature = "colliders")]
 use bevy::gizmos::AppGizmoBuilder as _;
 use bevy::image::ImagePlugin;
+use bevy::settings::SettingsPlugin;
 use bevy::window::{PresentMode, Window, WindowPlugin};
 pub fn app_run() -> AppExit {
     let mut app = App::new();
@@ -34,6 +36,7 @@ pub fn app_run() -> AppExit {
             })
             .set(ImagePlugin::default_nearest()),
         PhysicsPlugins::default(),
+        SettingsPlugin::new("com.github.bgkillas.noiter"),
         #[cfg(feature = "colliders")]
         avian2d::debug_render::PhysicsDebugPlugin,
         #[cfg(feature = "fps")]
@@ -60,7 +63,7 @@ pub fn app_run() -> AppExit {
             (on_resize_world, display_world).chain(),
         ),
     );
-    app.add_systems(FixedUpdate, (move_camera, zoom_camera));
+    app.add_systems(FixedUpdate, (move_camera, zoom_camera, cell_gravity));
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

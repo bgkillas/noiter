@@ -3,6 +3,30 @@ pub struct CellData {
     pub id: usize,
     pub color: CellColor,
     pub name: &'static str,
+    pub type_data: CellDataType,
+    pub cell_type: CellType,
+}
+pub struct CellDataPhysics {}
+pub struct CellDataStatic {}
+pub struct CellDataLiquid {}
+pub struct CellDataGas {}
+pub struct CellDataFire {}
+pub enum CellDataType {
+    Physics(CellDataPhysics),
+    Static(CellDataStatic),
+    Liquid(CellDataLiquid),
+    Gas(CellDataGas),
+    Fire(CellDataFire),
+    Air,
+}
+#[derive(PartialEq, Clone, Copy)]
+pub enum CellType {
+    Physics,
+    Static,
+    Liquid,
+    Gas,
+    Fire,
+    Air,
 }
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
@@ -31,6 +55,7 @@ impl CellColor {
 pub struct Cell {
     pub color: CellColor,
     pub cell_data: &'static CellData,
+    pub cell_type: CellType,
 }
 impl Cell {
     #[must_use]
@@ -39,6 +64,7 @@ impl Cell {
         Self {
             color: cell_data.color,
             cell_data,
+            cell_type: cell_data.cell_type,
         }
     }
     #[must_use]

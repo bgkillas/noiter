@@ -2,7 +2,7 @@ use crate::chunk::Chunk;
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, ChunkIndexType};
 use std::array;
 use std::hint::assert_unchecked;
-use std::ops::{Index, IndexMut};
+use std::ops::{Add, Index, IndexMut, Sub};
 use std::range::RangeFrom;
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
@@ -48,6 +48,24 @@ impl MatrixIndex {
         }
     }
 }
+impl Add<(ChunkIndexType, ChunkIndexType)> for MatrixIndex {
+    type Output = Self;
+    fn add(self, (x, y): (ChunkIndexType, ChunkIndexType)) -> Self::Output {
+        Self {
+            x: self.x + x,
+            y: self.y + y,
+        }
+    }
+}
+impl Sub<(ChunkIndexType, ChunkIndexType)> for MatrixIndex {
+    type Output = Self;
+    fn sub(self, (x, y): (ChunkIndexType, ChunkIndexType)) -> Self::Output {
+        Self {
+            x: self.x - x,
+            y: self.y - y,
+        }
+    }
+}
 impl From<u16> for MatrixIndex {
     fn from(value: u16) -> Self {
         let width = CHUNK_WIDTH.strict_cast::<u16>();
@@ -77,6 +95,18 @@ impl<T> Matrix<T> {
             .iter_mut()
             .zip(RangeFrom::from(0u16..))
             .map(|(cell, i)| (MatrixIndex::from(i), cell))
+    }
+    pub fn get_disjoint_mut<const N: usize>(&mut self, idx: [MatrixIndex; N]) -> [&mut T; N] {
+        self.elems
+            .as_flattened_mut()
+            .get_disjoint_mut(idx.map(|i| i.y() * CHUNK_WIDTH + i.x()))
+            .unwrap()
+    }
+    pub fn swap(&mut self, from: MatrixIndex, to: MatrixIndex) {
+        self.elems.as_flattened_mut().swap(
+            from.y() * CHUNK_WIDTH + from.x(),
+            to.y() * CHUNK_WIDTH + to.x(),
+        );
     }
 }
 impl<T> Index<MatrixIndex> for Matrix<T> {

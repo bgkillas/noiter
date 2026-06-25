@@ -58,9 +58,19 @@ pub fn startup(
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2 + 4..=CHUNK_MAP_HEIGHT / 2 + 5 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 1..=CHUNK_MAP_WIDTH / 2 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
-            let chunk = Chunk::new(|_| 5);
+            let chunk = Chunk::new(|_| 2);
             chunk_map.modified[chunk_index] = true;
             chunk_map.chunks.insert(chunk_index, chunk);
+        }
+    }
+    for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 4..=CHUNK_MAP_HEIGHT / 2 + 6 {
+        for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 3..=CHUNK_MAP_WIDTH / 2 + 2 {
+            let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
+            if chunk_map.chunks[chunk_index].is_none() {
+                let chunk = Chunk::new(|_| 0);
+                chunk_map.modified[chunk_index] = true;
+                chunk_map.chunks.insert(chunk_index, chunk);
+            }
         }
     }
     for r in 0..=128 {

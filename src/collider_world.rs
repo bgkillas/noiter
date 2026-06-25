@@ -4,14 +4,10 @@ use avian2d::math::Vector;
 use avian2d::parry::math::IVector;
 use avian2d::prelude::{Collider, RigidBody};
 use bevy::math::Vec3;
-use bevy::prelude::{Commands, Component, Query, ResMut, Transform, With};
+use bevy::prelude::{Commands, Component, ResMut, Transform};
 #[derive(Component)]
 pub struct ChunkCollider;
-pub fn update_colliders(
-    world_ref: ResMut<ChunkMap>,
-    mut colliders: Query<&mut Collider, With<ChunkCollider>>,
-    mut commands: Commands,
-) {
+pub fn update_colliders(world_ref: ResMut<ChunkMap>, mut commands: Commands) {
     let world = world_ref.into_inner();
     for (i, chunk) in world.chunks.iter() {
         if !world.modified[i] {
@@ -29,27 +25,24 @@ pub fn update_colliders(
             }
             vec.push(IVector::new(i.x.strict_cast(), i.y.strict_cast()));
         }
+        if let Some(ent) = world.collider_entities[i] {
+            commands.entity(ent).despawn();
+        }
         if vec.is_empty() {
             continue;
         }
         let collider = Collider::voxels(Vector::splat(1.0), &vec);
-        if let Some(ent) = world.collider_entities[i] {
-            let mut old_collider = colliders.get_mut(ent).unwrap();
-            *old_collider = collider;
-        } else {
-            let ent = commands.spawn((
-                RigidBody::Static,
-                collider,
-                Transform::from_xyz(
-                    PIXEL_SCALE * base_vector.x as f32,
-                    PIXEL_SCALE * base_vector.y as f32,
-                    0.0,
-                )
-                .with_scale(Vec3::splat(PIXEL_SCALE)),
-                ChunkCollider,
-            ));
-            world.collider_entities[i] = Some(ent.id());
-        }
-        return;
+        let ent = commands.spawn((
+            RigidBody::Static,
+            collider,
+            Transform::from_xyz(
+                PIXEL_SCALE * base_vector.x as f32,
+                PIXEL_SCALE * base_vector.y as f32,
+                0.0,
+            )
+            .with_scale(Vec3::splat(PIXEL_SCALE)),
+            ChunkCollider,
+        ));
+        world.collider_entities[i] = Some(ent.id());
     }
 }

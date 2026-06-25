@@ -57,12 +57,12 @@ impl ChunkMap {
     pub fn get(&self, index: CellIndex) -> Option<&Cell> {
         self.chunks[index.chunk_index]
             .as_ref()
-            .map(|c| &c.cells[index.cell_index])
+            .map(|c| &c[index.cell_index])
     }
     #[must_use]
     pub fn get_mut(&mut self, index: CellIndex) -> Option<&mut Cell> {
         self.chunks[index.chunk_index]
             .as_mut()
-            .map(|c| &mut c.cells[index.cell_index])
+            .map(|c| &mut c[index.cell_index])
     }
 }
