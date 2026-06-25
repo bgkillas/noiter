@@ -1,4 +1,5 @@
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, ChunkIndexType};
+use avian2d::parry::math::IVector;
 use std::array;
 use std::hint::assert_unchecked;
 use std::marker::PhantomData;
@@ -27,6 +28,14 @@ pub struct MatrixIndex {
 pub struct MatrixIndex {
     pub x: ChunkIndexType,
     pub y: ChunkIndexType,
+}
+impl From<MatrixIndex> for IVector {
+    fn from(value: MatrixIndex) -> Self {
+        Self {
+            x: value.x.strict_cast(),
+            y: value.y.strict_cast(),
+        }
+    }
 }
 impl MatrixIndex {
     #[must_use]

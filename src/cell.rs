@@ -76,4 +76,8 @@ impl Cell {
     pub fn is_air(&self) -> bool {
         self.color.is_air()
     }
+    #[must_use]
+    pub fn is_collider(&self) -> bool {
+        matches!(self.cell_type, CellType::Static)
+    }
 }

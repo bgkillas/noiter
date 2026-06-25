@@ -73,10 +73,27 @@ pub fn startup(
     for r in 0..=128 {
         for (dx, dy) in Circumference::new(r) {
             octant(x0, y0, dx, dy, |_, x, y| {
-                if let Some(c) =
-                    chunk_map.get_mut(CellIndex::from((x.strict_cast(), y.strict_cast())))
-                {
-                    *c = Cell::new(r % 8 + 1);
+                let index = CellIndex::from((x.strict_cast(), y.strict_cast()));
+                if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index] {
+                    let cell = Cell::new(r % 8 + 1);
+                    if cell.is_collider() {
+                        chunk
+                            .shape
+                            .make_mut()
+                            .as_voxels_mut()
+                            .unwrap()
+                            .set_voxel(index.cell_index.into(), true);
+                        chunk.voxels += 1;
+                    } else if chunk[index.cell_index].is_collider() {
+                        chunk
+                            .shape
+                            .make_mut()
+                            .as_voxels_mut()
+                            .unwrap()
+                            .set_voxel(index.cell_index.into(), false);
+                        chunk.voxels -= 1;
+                    }
+                    chunk[index.cell_index] = cell;
                 }
             });
         }
@@ -96,7 +113,7 @@ pub fn startup(
     commands.spawn((
         WorldImage::default(),
         Sprite::from_image(handle.clone()),
-        Transform::from_scale(Vec3::splat(PIXEL_SCALE)),
+        Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(PIXEL_SCALE)),
     ));
     for i in 2..8 {
         commands.spawn((
