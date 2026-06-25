@@ -10,6 +10,8 @@ use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, FixedUpdate, PluginGroup as _, Startup, Update};
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
+use bevy::camera::ClearColor;
+use bevy::color::Color;
 use bevy::ecs::schedule::IntoScheduleConfigs as _;
 #[cfg(feature = "colliders")]
 use bevy::gizmos::AppGizmoBuilder as _;
@@ -53,6 +55,7 @@ pub fn app_run() -> AppExit {
         bevy::gizmos::config::GizmoConfig::default(),
     );
     app.insert_resource(ChunkMap::default());
+    app.insert_resource(ClearColor(Color::srgba_u32(0xa6e7_ffff)));
     app.add_systems(Startup, startup);
     app.add_systems(
         Update,

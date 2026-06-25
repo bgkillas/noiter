@@ -55,7 +55,7 @@ impl CellColor {
     pub fn as_u32(self) -> u32 {
         unsafe { mem::transmute(self) }
     }
-    pub const AIR: Self = Self::new(0, 0, 0, 0);
+    pub const AIR: Self = Self::new(0x00, 0x00, 0x00, 0x00);
 }
 pub struct Cell {
     pub color: CellColor,

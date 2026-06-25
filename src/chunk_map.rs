@@ -12,14 +12,14 @@ pub struct ChunkMap {
     pub collider_entities: Matrix<Option<Entity>>,
 }
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg(target_endian = "big")]
 pub struct CellIndex {
     pub chunk_index: MatrixIndex,
     pub cell_index: MatrixIndex,
 }
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg(target_endian = "little")]
 pub struct CellIndex {
     pub cell_index: MatrixIndex,

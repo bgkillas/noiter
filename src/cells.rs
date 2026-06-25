@@ -5,7 +5,7 @@ use crate::cell::{
 pub const CELLS: [CellData; 9] = [
     CellData {
         id: 0,
-        color: CellColor::new(0x00, 0x00, 0x00, 0x00),
+        color: CellColor::AIR,
         name: "air",
         type_data: CellDataType::Air,
         cell_type: CellType::Air,

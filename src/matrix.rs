@@ -14,14 +14,14 @@ pub struct MatrixBounded<T> {
     pub max_elem: MatrixIndex,
 }
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg(target_endian = "big")]
 pub struct MatrixIndex {
     pub y: ChunkIndexType,
     pub x: ChunkIndexType,
 }
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg(target_endian = "little")]
 pub struct MatrixIndex {
     pub x: ChunkIndexType,
