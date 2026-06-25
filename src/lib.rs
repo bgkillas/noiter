@@ -1,6 +1,9 @@
 #![feature(integer_casts)]
 #![feature(int_roundings)]
+#![feature(test)]
 pub mod app;
+#[cfg(test)]
+mod bench;
 pub mod camera;
 pub mod cell;
 pub mod cell_gravity;
@@ -12,6 +15,7 @@ pub mod matrix;
 pub mod startup;
 pub mod update;
 pub mod world_image;
+extern crate test;
 pub const PIXEL_SCALE: f32 = 1.0;
 pub const PIXEL_LENGTH: u32 = 16;
 pub const CHUNK_WIDTH: usize = 256;

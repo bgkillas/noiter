@@ -1,4 +1,5 @@
 use crate::cells::CELLS;
+use std::mem;
 pub struct CellData {
     pub id: usize,
     pub color: CellColor,
@@ -47,8 +48,12 @@ impl CellColor {
         Self { r, g, b, a }
     }
     #[must_use]
-    pub fn is_air(&self) -> bool {
-        *self == Self::AIR
+    pub fn is_air(self) -> bool {
+        self == Self::AIR
+    }
+    #[must_use]
+    pub fn as_u32(self) -> u32 {
+        unsafe { mem::transmute(self) }
     }
     pub const AIR: Self = Self::new(0, 0, 0, 0);
 }

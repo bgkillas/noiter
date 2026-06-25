@@ -54,7 +54,7 @@ pub fn display_world(
     let ex = sx + world_image_dim.width;
     write_data(&world, chunks, sx, ex, ey);
 }
-fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
+pub(crate) fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
     let mut y = ey;
     for arr in chunks.chunks_exact_mut((ex - sx).strict_cast()) {
         y -= 1;
