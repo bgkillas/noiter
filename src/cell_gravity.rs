@@ -16,15 +16,8 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>, mut num: Local<usize>) {
     let max_y = world.chunks.max_elem.y;
     for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
         let chunk_index = MatrixIndex { x, y };
-        //TODO does not support y == CHUNK_MAP_HEIGHT
-        let upper_index = chunk_index + (0, 1);
-        //TODO does not support y == 0
-        let lower_index = chunk_index - (0, 1);
-        let [upper, maybe_chunk, lower] =
-            world
-                .chunks
-                .matrix
-                .get_disjoint_mut([upper_index, chunk_index, lower_index]);
+        let [mut upper, _, maybe_chunk, _, mut lower] =
+            world.chunks.matrix.get_neighbors_mut(chunk_index);
         let Some(chunk) = maybe_chunk else {
             continue;
         };
@@ -43,7 +36,7 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>, mut num: Local<usize>) {
                             x: idx.x,
                             y: (CHUNK_HEIGHT - 1).strict_cast(),
                         };
-                        if let Some(lc) = lower.as_mut()
+                        if let Some(lc) = &mut lower
                             && lc[lidx].cell_type == CellType::Air
                         {
                             any_changed = true;
@@ -58,7 +51,7 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>, mut num: Local<usize>) {
                 CellType::Gas => {
                     if idx.y == (CHUNK_HEIGHT - 1).strict_cast() {
                         let uidx = MatrixIndex { x: idx.x, y: 0 };
-                        if let Some(uc) = upper.as_mut()
+                        if let Some(uc) = &mut upper
                             && uc[uidx].cell_type == CellType::Air
                         {
                             any_changed = true;
@@ -75,10 +68,10 @@ pub fn cell_gravity(mut world: ResMut<ChunkMap>, mut num: Local<usize>) {
         }
         if any_changed {
             if upper_any_changed {
-                upper.as_mut().unwrap().voxels_modified = true;
+                upper.unwrap().voxels_modified = true;
             }
             if lower_any_changed {
-                lower.as_mut().unwrap().voxels_modified = true;
+                lower.unwrap().voxels_modified = true;
             }
             chunk.voxels_modified = true;
             world.any_modified = true;

@@ -132,65 +132,30 @@ impl<T> Matrix<T> {
 impl<T> Matrix<Option<T>> {
     pub fn get_neighbors_mut(&mut self, idx: MatrixIndex) -> [Option<&mut T>; 5] {
         const MAX: ChunkIndexType = (CHUNK_WIDTH - 1) as ChunkIndexType;
-        match (idx.x, idx.y) {
-            (0, 0) => {
-                let [top, mid, right] = self
-                    .get_disjoint_unchecked_mut([idx + (0, 1), idx, idx + (1, 0)])
-                    .map(Option::as_mut);
-                [top, None, mid, right, None]
-            }
-            (0, MAX) => {
-                let [mid, right, down] = self
-                    .get_disjoint_unchecked_mut([idx, idx + (1, 0), idx - (0, 1)])
-                    .map(Option::as_mut);
-                [None, None, mid, right, down]
-            }
-            (MAX, 0) => {
-                let [top, left, mid] = self
-                    .get_disjoint_unchecked_mut([idx + (0, 1), idx - (1, 0), idx])
-                    .map(Option::as_mut);
-                [top, left, mid, None, None]
-            }
-            (MAX, MAX) => {
-                let [left, mid, down] = self
-                    .get_disjoint_unchecked_mut([idx - (1, 0), idx, idx - (0, 1)])
-                    .map(Option::as_mut);
-                [None, left, mid, None, down]
-            }
-            (0, _) => {
-                let [top, mid, right, down] = self
-                    .get_disjoint_unchecked_mut([idx + (0, 1), idx, idx + (1, 0), idx - (0, 1)])
-                    .map(Option::as_mut);
-                [top, None, mid, right, down]
-            }
-            (MAX, _) => {
-                let [top, left, mid, down] = self
-                    .get_disjoint_unchecked_mut([idx + (0, 1), idx - (1, 0), idx, idx - (0, 1)])
-                    .map(Option::as_mut);
-                [top, left, mid, None, down]
-            }
-            (_, 0) => {
-                let [top, left, mid, right] = self
-                    .get_disjoint_unchecked_mut([idx + (0, 1), idx - (1, 0), idx, idx + (1, 0)])
-                    .map(Option::as_mut);
-                [top, left, mid, right, None]
-            }
-            (_, MAX) => {
-                let [left, mid, right, down] = self
-                    .get_disjoint_unchecked_mut([idx - (1, 0), idx, idx + (1, 0), idx - (0, 1)])
-                    .map(Option::as_mut);
-                [None, left, mid, right, down]
-            }
-            _ => self
-                .get_disjoint_unchecked_mut([
-                    idx + (0, 1),
-                    idx - (1, 0),
-                    idx,
-                    idx + (1, 0),
-                    idx - (0, 1),
-                ])
-                .map(Option::as_mut),
+        let mut ret = [None, None, None, None, None];
+        let mut idxs = [None, None, Some(idx), None, None];
+        if idx.y != MAX {
+            idxs[0] = Some(idx + (0, 1));
         }
+        if idx.x != 0 {
+            idxs[1] = Some(idx - (1, 0));
+        }
+        if idx.x != MAX {
+            idxs[3] = Some(idx + (1, 0));
+        }
+        if idx.y != 0 {
+            idxs[4] = Some(idx - (0, 1));
+        }
+        let arr_ptr: *mut [Option<T>] = self.elems.as_flattened_mut();
+        for (i, opt_pos) in idxs.into_iter().enumerate() {
+            if let Some(pos) = opt_pos {
+                unsafe {
+                    ret[i] =
+                        (&mut *arr_ptr.get_unchecked_mut(pos.y() * CHUNK_WIDTH + pos.x())).as_mut();
+                }
+            }
+        }
+        ret
     }
 }
 impl<T> Index<MatrixIndex> for Matrix<T> {

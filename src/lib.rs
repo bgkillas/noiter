@@ -1,5 +1,6 @@
 #![feature(integer_casts)]
 #![feature(int_roundings)]
+#![feature(slice_ptr_get)]
 #![feature(test)]
 pub mod app;
 #[cfg(test)]
