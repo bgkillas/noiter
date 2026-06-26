@@ -7,7 +7,7 @@ use bevy::prelude::Entity;
 use std::ops::{Index, IndexMut};
 pub struct Chunk {
     pub cells: Box<Matrix<Cell>>,
-    pub modified: bool,
+    pub voxels_modified: bool,
     pub collider: Option<Entity>,
     pub shape: SharedShape,
     pub voxels: usize,
@@ -33,7 +33,7 @@ impl Chunk {
             }
             Self {
                 cells: cells.assume_init(),
-                modified: true,
+                voxels_modified: true,
                 collider: None,
                 shape,
                 voxels,
