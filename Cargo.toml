@@ -32,7 +32,8 @@ crate-type = ["cdylib", "rlib"]
 bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "bevy_settings"]}
 avian2d = {version = "0.7.0", features = ["simd", "parallel"]}
 shapes = {version = "0.1.0", git = "https://github.com/bgkillas/helix"}
-#rand = "0.10.1"
+uninit_map = {version = "0.1.0", git = "https://github.com/bgkillas/helix"}
+rand = { version = "0.10.1", default-features = false, features = ["std", "alloc", "simd_support", "sys_rng"] }
 
 [lints.clippy]
 pedantic = {level = "warn", priority = -1}

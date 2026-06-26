@@ -2746,6 +2746,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi 6.0.0",
+ "rand_core",
 ]
 
 [[package]]
@@ -3580,7 +3581,9 @@ version = "0.1.0"
 dependencies = [
  "avian2d",
  "bevy",
+ "rand",
  "shapes",
+ "uninit_map",
 ]
 
 [[package]]
@@ -4726,7 +4729,7 @@ dependencies = [
 [[package]]
 name = "shapes"
 version = "0.1.0"
-source = "git+https://github.com/bgkillas/helix#f6396b9210b0deaa0cc6a5223d3e740162e0a925"
+source = "git+https://github.com/bgkillas/helix#b406038156f6ebac43de23ba1f8f6c822c408cdd"
 
 [[package]]
 name = "sharded-slab"
@@ -5331,6 +5334,11 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "uninit_map"
+version = "0.1.0"
+source = "git+https://github.com/bgkillas/helix#b406038156f6ebac43de23ba1f8f6c822c408cdd"
 
 [[package]]
 name = "utf8_iter"

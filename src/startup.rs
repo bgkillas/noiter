@@ -1,6 +1,6 @@
 use crate::cell::Cell;
 use crate::chunk::Chunk;
-use crate::chunk_map::{CellIndex, ChunkMap};
+use crate::chunk_map::{ChunkMap, FullIndex};
 use crate::matrix::MatrixIndex;
 use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
@@ -73,7 +73,7 @@ pub fn startup(
     for r in 0..=128 {
         for (dx, dy) in Circumference::new(r) {
             octant(x0, y0, dx, dy, |_, x, y| {
-                let index = CellIndex::from((x.strict_cast(), y.strict_cast()));
+                let index = FullIndex::from((x.strict_cast(), y.strict_cast()));
                 if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index] {
                     let cell = Cell::new(r % 8 + 1);
                     if cell.is_collider() {

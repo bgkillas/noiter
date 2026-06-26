@@ -1,8 +1,8 @@
 use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
-use crate::cell_gravity::cell_gravity;
 use crate::chunk_map::ChunkMap;
 use crate::collider_world::update_colliders;
+use crate::simulate_world::simulate_world;
 use crate::startup::startup;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
@@ -64,7 +64,7 @@ pub fn app_run() -> AppExit {
             (on_resize_world, display_world).chain(),
         ),
     );
-    app.add_systems(FixedUpdate, (move_camera, zoom_camera, cell_gravity));
+    app.add_systems(FixedUpdate, (move_camera, zoom_camera, simulate_world));
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

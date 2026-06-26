@@ -80,4 +80,13 @@ impl Cell {
     pub fn is_collider(&self) -> bool {
         matches!(self.cell_type, CellType::Static)
     }
+    #[must_use]
+    pub fn can_move(&self, other: &Self) -> bool {
+        matches!(self.cell_type, CellType::Liquid | CellType::Gas)
+            && matches!(
+                other.cell_type,
+                CellType::Liquid | CellType::Gas | CellType::Air
+            )
+            && self.cell_data.id != other.cell_data.id
+    }
 }

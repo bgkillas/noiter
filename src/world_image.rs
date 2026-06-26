@@ -1,6 +1,6 @@
 use crate::PIXEL_SCALE;
 use crate::cell::CellColor;
-use crate::chunk_map::{CellIndex, ChunkMap};
+use crate::chunk_map::{ChunkMap, FullIndex};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
@@ -59,7 +59,7 @@ pub(crate) fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: 
     for arr in chunks.chunks_exact_mut((ex - sx).strict_cast()) {
         y -= 1;
         for (x, c) in (sx..).zip(arr.iter_mut()) {
-            let idx = CellIndex::from((x, y));
+            let idx = FullIndex::from((x, y));
             *c = <[u8; 4]>::from(if let Some(cell) = world.get(idx) {
                 cell.color
             } else {
