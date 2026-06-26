@@ -4,7 +4,7 @@ use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::ecs::resource::Resource;
 use std::ops::{Add, Index, IndexMut, Sub};
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone)]
 pub struct ChunkMap {
     pub chunks: MatrixBounded<Chunk>,
     pub any_modified: bool,

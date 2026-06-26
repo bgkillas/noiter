@@ -2,7 +2,7 @@ use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::ChunkMap;
 use crate::collider_world::update_colliders;
-use crate::simulate_world::simulate_world;
+use crate::simulate_world::{ChunkMapNext, chunk_map_next, simulate_world};
 use crate::startup::startup;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
@@ -54,6 +54,7 @@ pub fn app_run() -> AppExit {
         bevy::gizmos::config::GizmoConfig::default(),
     );
     app.insert_resource(ChunkMap::default());
+    app.insert_resource(ChunkMapNext::default());
     app.insert_resource(ClearColor(Color::srgba_u32(0x96b7_ddff)));
     app.add_systems(Startup, startup);
     app.add_systems(
@@ -64,7 +65,14 @@ pub fn app_run() -> AppExit {
             (on_resize_world, display_world).chain(),
         ),
     );
-    app.add_systems(FixedUpdate, (move_camera, zoom_camera, simulate_world));
+    app.add_systems(
+        FixedUpdate,
+        (
+            move_camera,
+            zoom_camera,
+            (simulate_world, chunk_map_next).chain(),
+        ),
+    );
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

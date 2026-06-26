@@ -26,12 +26,11 @@ impl<T> CellMap<T> {
             chunk * CHUNK_WIDTH * CHUNK_HEIGHT + index.cell_index.flatten().strict_cast::<usize>(),
         )
     }
-    #[must_use]
     pub fn insert(&mut self, index: FullIndex, val: T) {
         let chunk = unsafe { self.chunk_index[index.chunk_index].assume_init() };
         self.map.insert(
             chunk * CHUNK_WIDTH * CHUNK_HEIGHT + index.cell_index.flatten().strict_cast::<usize>(),
             val,
-        )
+        );
     }
 }

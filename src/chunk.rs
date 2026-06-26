@@ -5,6 +5,7 @@ use avian2d::math::Vector;
 use avian2d::parry::shape::{SharedShape, Voxels};
 use bevy::prelude::Entity;
 use std::ops::{Index, IndexMut};
+#[derive(Clone)]
 pub struct Chunk {
     pub cells: Box<Matrix<Cell>>,
     pub voxels_modified: bool,

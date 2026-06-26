@@ -57,7 +57,7 @@ pub fn zoom_camera(
         kb_input.pressed(KeyCode::KeyQ),
         kb_input.pressed(KeyCode::KeyE),
     ) {
-        (true, false) if **pixel_length != 1 => {
+        (true, false) if **pixel_length != 2 => {
             **pixel_length -= 1;
         }
         (false, true) => {

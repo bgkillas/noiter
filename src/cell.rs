@@ -1,4 +1,5 @@
 use crate::cells::CELLS;
+use bevy::diagnostic::FrameCount;
 use std::mem;
 pub struct CellData {
     pub id: usize,
@@ -57,10 +58,12 @@ impl CellColor {
     }
     pub const AIR: Self = Self::new(0x00, 0x00, 0x00, 0x00);
 }
+#[derive(Clone)]
 pub struct Cell {
     pub color: CellColor,
     pub cell_data: &'static CellData,
     pub cell_type: CellType,
+    pub last_changed: FrameCount,
 }
 impl Cell {
     #[must_use]
@@ -70,6 +73,7 @@ impl Cell {
             color: cell_data.color,
             cell_data,
             cell_type: cell_data.cell_type,
+            last_changed: FrameCount(0),
         }
     }
     #[must_use]

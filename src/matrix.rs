@@ -7,9 +7,11 @@ use std::mem::MaybeUninit;
 use std::ops::{Add, Index, IndexMut, Sub};
 use std::ptr::NonNull;
 use std::range::RangeFrom;
+#[derive(Clone)]
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
 }
+#[derive(Clone)]
 pub struct MatrixBounded<T> {
     pub matrix: Matrix<Option<T>>,
     pub len: usize,
