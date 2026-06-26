@@ -3,6 +3,7 @@ use avian2d::parry::math::IVector;
 use std::array;
 use std::hint::assert_unchecked;
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 use std::ops::{Add, Index, IndexMut, Sub};
 use std::ptr::NonNull;
 use std::range::RangeFrom;
@@ -47,6 +48,10 @@ impl MatrixIndex {
         self.y.strict_cast()
     }
     #[must_use]
+    pub fn flatten(self) -> u16 {
+        self.y.strict_cast::<u16>() * CHUNK_WIDTH.strict_cast::<u16>() + self.x.strict_cast::<u16>()
+    }
+    #[must_use]
     pub fn new(x: usize, y: usize) -> Self {
         unsafe {
             assert_unchecked(x < 256);
@@ -86,6 +91,12 @@ impl From<u16> for MatrixIndex {
     }
 }
 impl<T> Matrix<T> {
+    #[must_use]
+    pub fn uninit() -> Matrix<MaybeUninit<T>> {
+        Matrix {
+            elems: [const { [const { MaybeUninit::uninit() }; CHUNK_MAP_WIDTH] }; CHUNK_MAP_HEIGHT],
+        }
+    }
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.elems.iter().flat_map(|elems| elems.iter())
     }
@@ -109,7 +120,7 @@ impl<T> Matrix<T> {
     pub fn get_disjoint_mut<const N: usize>(&mut self, idx: [MatrixIndex; N]) -> [&mut T; N] {
         self.elems
             .as_flattened_mut()
-            .get_disjoint_mut(idx.map(|i| i.y() * CHUNK_WIDTH + i.x()))
+            .get_disjoint_mut(idx.map(|i| i.flatten().strict_cast::<usize>()))
             .unwrap()
     }
     pub fn get_disjoint_unchecked_mut<const N: usize>(
@@ -119,13 +130,13 @@ impl<T> Matrix<T> {
         unsafe {
             self.elems
                 .as_flattened_mut()
-                .get_disjoint_unchecked_mut(idx.map(|i| i.y() * CHUNK_WIDTH + i.x()))
+                .get_disjoint_unchecked_mut(idx.map(|i| i.flatten().strict_cast::<usize>()))
         }
     }
     pub fn swap(&mut self, from: MatrixIndex, to: MatrixIndex) {
         self.elems.as_flattened_mut().swap(
-            from.y() * CHUNK_WIDTH + from.x(),
-            to.y() * CHUNK_WIDTH + to.x(),
+            from.flatten().strict_cast::<usize>(),
+            to.flatten().strict_cast::<usize>(),
         );
     }
 }
@@ -150,8 +161,9 @@ impl<T> Matrix<Option<T>> {
         for (i, opt_pos) in idxs.into_iter().enumerate() {
             if let Some(pos) = opt_pos {
                 unsafe {
-                    ret[i] =
-                        (&mut *arr_ptr.get_unchecked_mut(pos.y() * CHUNK_WIDTH + pos.x())).as_mut();
+                    ret[i] = (&mut *arr_ptr
+                        .get_unchecked_mut(pos.flatten().strict_cast::<usize>()))
+                        .as_mut();
                 }
             }
         }
