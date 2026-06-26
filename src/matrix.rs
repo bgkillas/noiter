@@ -134,8 +134,8 @@ impl<T> Matrix<Option<T>> {
         const MAX: ChunkIndexType = (CHUNK_WIDTH - 1) as ChunkIndexType;
         let mut ret = [None, None, None, None, None];
         let mut idxs = [None, None, Some(idx), None, None];
-        if idx.y != MAX {
-            idxs[0] = Some(idx + (0, 1));
+        if idx.y != 0 {
+            idxs[0] = Some(idx - (0, 1));
         }
         if idx.x != 0 {
             idxs[1] = Some(idx - (1, 0));
@@ -143,8 +143,8 @@ impl<T> Matrix<Option<T>> {
         if idx.x != MAX {
             idxs[3] = Some(idx + (1, 0));
         }
-        if idx.y != 0 {
-            idxs[4] = Some(idx - (0, 1));
+        if idx.y != MAX {
+            idxs[4] = Some(idx + (0, 1));
         }
         let arr_ptr: *mut [Option<T>] = self.elems.as_flattened_mut();
         for (i, opt_pos) in idxs.into_iter().enumerate() {
