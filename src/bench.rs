@@ -1,5 +1,5 @@
 use crate::chunk::Chunk;
-use crate::chunk_map::ChunkMap;
+use crate::chunk_map::{ChunkMap, ChunkMapModified};
 use crate::matrix::MatrixIndex;
 use crate::world_image::write_data;
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
@@ -10,16 +10,16 @@ fn bench_write_data(bencher: &mut Bencher) {
     let mut chunk_map = ChunkMap::default();
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(0, 0), Chunk::new(|_| 1));
+        .insert(MatrixIndex::new(0, 0), Chunk::new(|_| 1).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(1, 0), Chunk::new(|_| 1));
+        .insert(MatrixIndex::new(1, 0), Chunk::new(|_| 1).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(0, 1), Chunk::new(|_| 1));
+        .insert(MatrixIndex::new(0, 1), Chunk::new(|_| 1).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(1, 1), Chunk::new(|_| 1));
+        .insert(MatrixIndex::new(1, 1), Chunk::new(|_| 1).0);
     let mut data = vec![[0u8; 4]; 256 * 256 * 2 * 2];
     bencher.iter(|| {
         write_data(
@@ -36,10 +36,10 @@ fn bench_simulate(bencher: &mut Bencher) {
     let mut chunk_map = ChunkMap::default();
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(0, 0), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(0, 0), Chunk::new(|_| 0).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(1, 0), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(1, 0), Chunk::new(|_| 0).0);
     chunk_map.chunks.insert(
         MatrixIndex::new(0, 1),
         Chunk::new(|index| {
@@ -50,7 +50,8 @@ fn bench_simulate(bencher: &mut Bencher) {
             } else {
                 0
             }
-        }),
+        })
+        .0,
     );
     chunk_map.chunks.insert(
         MatrixIndex::new(1, 1),
@@ -62,26 +63,28 @@ fn bench_simulate(bencher: &mut Bencher) {
             } else {
                 0
             }
-        }),
+        })
+        .0,
     );
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(2, 0), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(2, 0), Chunk::new(|_| 0).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(2, 1), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(2, 1), Chunk::new(|_| 0).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(2, 2), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(2, 2), Chunk::new(|_| 0).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(0, 2), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(0, 2), Chunk::new(|_| 0).0);
     chunk_map
         .chunks
-        .insert(MatrixIndex::new(1, 2), Chunk::new(|_| 0));
+        .insert(MatrixIndex::new(1, 2), Chunk::new(|_| 0).0);
     let mut i = 0;
+    let mut modified = ChunkMapModified::default();
     bencher.iter(|| {
         i += 1;
-        chunk_map.simulate(FrameCount(i));
+        chunk_map.simulate(&mut modified, FrameCount(i));
     })
 }

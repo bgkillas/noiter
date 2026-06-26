@@ -1,6 +1,6 @@
 use crate::cell::Cell;
 use crate::chunk::Chunk;
-use crate::chunk_map::{ChunkMap, FullIndex};
+use crate::chunk_map::{ChunkMap, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
@@ -21,6 +21,7 @@ use shapes::octant::octant;
 pub fn startup(
     mut commands: Commands,
     mut chunk_map: ResMut<ChunkMap>,
+    mut voxel_chunk_map: ResMut<VoxelChunkMap>,
     mut images: ResMut<Assets<Image>>,
 ) {
     let x = PIXEL_SCALE * (CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2) as f32;
@@ -34,11 +35,10 @@ pub fn startup(
     ));
     let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
     let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
-    chunk_map.any_modified = true;
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 2..=CHUNK_MAP_HEIGHT / 2 + 1 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 2..=CHUNK_MAP_WIDTH / 2 + 1 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
-            let chunk = Chunk::new(|cell_index| {
+            let (chunk, voxel_chunk) = Chunk::new(|cell_index| {
                 if y0.abs_diff(
                     cell_index.y.strict_cast::<usize>()
                         + CHUNK_HEIGHT * chunk_index.y.strict_cast::<usize>(),
@@ -52,30 +52,33 @@ pub fn startup(
                 }
             });
             chunk_map.chunks.insert(chunk_index, chunk);
+            voxel_chunk_map.chunks.insert(chunk_index, voxel_chunk);
         }
     }
     for r in 0..=128 {
         for (dx, dy) in Circumference::new(r) {
             octant(x0, y0, dx, dy, |_, x, y| {
                 let index = FullIndex::from((x.strict_cast(), y.strict_cast()));
-                if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index] {
+                if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index]
+                    && let Some(voxel_chunk) = &mut voxel_chunk_map.chunks[index.chunk_index]
+                {
                     let cell = Cell::new(r % 8 + 1);
                     if cell.is_collider() {
-                        chunk
+                        voxel_chunk
                             .shape
                             .make_mut()
                             .as_voxels_mut()
                             .unwrap()
                             .set_voxel(index.cell_index.into(), true);
-                        chunk.voxels += 1;
+                        voxel_chunk.voxels += 1;
                     } else if chunk[index.cell_index].is_collider() {
-                        chunk
+                        voxel_chunk
                             .shape
                             .make_mut()
                             .as_voxels_mut()
                             .unwrap()
                             .set_voxel(index.cell_index.into(), false);
-                        chunk.voxels -= 1;
+                        voxel_chunk.voxels -= 1;
                     }
                     chunk[index.cell_index] = cell;
                 }

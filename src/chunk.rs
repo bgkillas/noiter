@@ -8,13 +8,16 @@ use std::ops::{Index, IndexMut};
 #[derive(Clone)]
 pub struct Chunk {
     pub cells: Box<Matrix<Cell>>,
+}
+#[derive(Clone)]
+pub struct VoxelChunk {
     pub voxels_modified: bool,
     pub collider: Option<Entity>,
     pub shape: SharedShape,
     pub voxels: usize,
 }
 impl Chunk {
-    pub fn new(mut f: impl FnMut(MatrixIndex) -> usize) -> Self {
+    pub fn new(mut f: impl FnMut(MatrixIndex) -> usize) -> (Self, VoxelChunk) {
         let mut cells = Box::<Matrix<Cell>>::new_uninit();
         let mut shape = SharedShape::new(Voxels::new(Vector::splat(PIXEL_SCALE), &[]));
         let voxel = shape.make_mut().as_voxels_mut().unwrap();
@@ -32,13 +35,17 @@ impl Chunk {
                     *ptr.index_mut(cell_index) = cell;
                 }
             }
-            Self {
-                cells: cells.assume_init(),
-                voxels_modified: true,
-                collider: None,
-                shape,
-                voxels,
-            }
+            (
+                Self {
+                    cells: cells.assume_init(),
+                },
+                VoxelChunk {
+                    voxels_modified: true,
+                    collider: None,
+                    shape,
+                    voxels,
+                },
+            )
         }
     }
 }

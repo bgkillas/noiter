@@ -1,6 +1,6 @@
 use crate::PIXEL_SCALE;
 use crate::cell::CellColor;
-use crate::chunk_map::{ChunkMap, FullIndex};
+use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
@@ -29,7 +29,8 @@ pub fn display_world(
     mut images: ResMut<Assets<Image>>,
     world_image: Single<(&mut Transform, &WorldImage), Without<Camera2d>>,
     camera: Single<&Transform, (With<Camera2d>, Without<WorldImage>)>,
-    mut world: ResMut<ChunkMap>,
+    world: Res<ChunkMap>,
+    mut modified: ResMut<ChunkMapModified>,
     mut last_pos: Local<CameraPos>,
 ) {
     let (mut transform, world_image_dim) = world_image.into_inner();
@@ -39,11 +40,11 @@ pub fn display_world(
         px: px as u16,
         py: py as u16,
     };
-    if *last_pos == pos && !world.any_modified {
+    if *last_pos == pos && !modified.visual_modified {
         return;
     }
     *last_pos = pos;
-    world.any_modified = false;
+    modified.visual_modified = false;
     transform.translation.x = px * PIXEL_SCALE;
     transform.translation.y = py * PIXEL_SCALE;
     let mut image = images.get_mut(&**world_image_handle).unwrap();
@@ -74,7 +75,7 @@ pub fn on_resize_world(
     mut images: ResMut<Assets<Image>>,
     mut world_image: Single<&mut WorldImage>,
     pixel_length: Res<PixelLength>,
-    mut world: ResMut<ChunkMap>,
+    mut modified: ResMut<ChunkMapModified>,
 ) {
     if let Some(size) = resize_reader.read().last() {
         resize_world(
@@ -84,7 +85,7 @@ pub fn on_resize_world(
             &mut images,
             &mut world_image,
             **pixel_length,
-            &mut world,
+            &mut modified,
         );
     }
 }
@@ -95,9 +96,9 @@ pub fn resize_world(
     images: &mut Assets<Image>,
     world_image: &mut WorldImage,
     pixel_length: u32,
-    world: &mut ChunkMap,
+    modified: &mut ChunkMapModified,
 ) {
-    world.any_modified = true;
+    modified.visual_modified = true;
     let mut image = images.get_mut(world_image_handle).unwrap();
     let image_width = (width.div_ceil(pixel_length) + 2).next_multiple_of(2);
     let image_height = (height.div_ceil(pixel_length) + 2).next_multiple_of(2);

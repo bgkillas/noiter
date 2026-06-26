@@ -1,5 +1,5 @@
 use crate::cell::CellType;
-use crate::chunk_map::{ChunkMap, FullIndex};
+use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use bevy::diagnostic::FrameCount;
 use bevy::prelude::{Deref, DerefMut, Res, ResMut, Resource};
@@ -11,14 +11,25 @@ use std::range::RangeInclusive;
 pub struct ChunkMapNext {
     chunk_map: ChunkMap,
 }
-pub fn simulate_world(mut world: ResMut<ChunkMap>, frame: Res<FrameCount>) {
-    world.simulate(*frame);
+#[derive(Resource, Default, Deref, DerefMut)]
+pub struct VoxelChunkMapNext {
+    voxel_chunk_map: VoxelChunkMap,
+}
+pub fn simulate_world(
+    mut world: ResMut<ChunkMap>,
+    mut modified: ResMut<ChunkMapModified>,
+    frame: Res<FrameCount>,
+) {
+    world.simulate(&mut modified, *frame);
 }
 pub fn chunk_map_next(_: ResMut<ChunkMap>, _: Res<ChunkMapNext>) {
     //TODO
 }
+pub fn voxel_chunk_map_next(_: ResMut<VoxelChunkMap>, _: Res<VoxelChunkMapNext>) {
+    //TODO
+}
 impl ChunkMap {
-    pub fn simulate(&mut self, frame: FrameCount) {
+    pub fn simulate(&mut self, modified: &mut ChunkMapModified, frame: FrameCount) {
         let mut rand: SmallRng = make_rng();
         let min_x = self.chunks.min_elem.x;
         let max_x = self.chunks.max_elem.x;
@@ -27,13 +38,14 @@ impl ChunkMap {
         for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
             let chunk_index = MatrixIndex { x, y };
             if self[chunk_index].is_some() {
-                self.simulate_chunk(chunk_index, frame, &mut rand);
+                self.simulate_chunk(chunk_index, modified, frame, &mut rand);
             }
         }
     }
     pub fn simulate_chunk(
         &mut self,
         chunk_index: MatrixIndex,
+        modified: &mut ChunkMapModified,
         frame: FrameCount,
         rand: &mut SmallRng,
     ) {
@@ -43,10 +55,16 @@ impl ChunkMap {
                 cell_index,
                 chunk_index,
             };
-            self.simulate_cell(index, frame, rand);
+            self.simulate_cell(index, modified, frame, rand);
         }
     }
-    pub fn simulate_cell(&mut self, index: FullIndex, frame: FrameCount, rand: &mut SmallRng) {
+    pub fn simulate_cell(
+        &mut self,
+        index: FullIndex,
+        modified: &mut ChunkMapModified,
+        frame: FrameCount,
+        rand: &mut SmallRng,
+    ) {
         let Some(cell) = self.get_mut(index) else {
             return;
         };
@@ -73,7 +91,7 @@ impl ChunkMap {
                         index + (1, 0),
                     ]
                 };
-                self.swap_from_list(index, check);
+                self.swap_from_list(index, modified, check);
             }
             CellType::Gas => {
                 let check = [match rand.random_range(0..9) {
@@ -88,15 +106,20 @@ impl ChunkMap {
                     8 => index - (0, 1) + (1, 0),
                     _ => unreachable!(),
                 }];
-                self.swap_from_list(index, check);
+                self.swap_from_list(index, modified, check);
             }
             _ => {}
         }
     }
-    pub fn swap_from_list<const N: usize>(&mut self, index: FullIndex, check: [FullIndex; N]) {
+    pub fn swap_from_list<const N: usize>(
+        &mut self,
+        index: FullIndex,
+        modified: &mut ChunkMapModified,
+        check: [FullIndex; N],
+    ) {
         for swap_index in check {
             if self.try_swap(index, swap_index) {
-                self.any_modified = true;
+                modified.visual_modified = true;
                 return;
             }
         }

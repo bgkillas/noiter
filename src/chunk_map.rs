@@ -1,13 +1,27 @@
 use crate::cell::Cell;
-use crate::chunk::Chunk;
+use crate::chunk::{Chunk, VoxelChunk};
 use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::ecs::resource::Resource;
 use std::ops::{Add, Index, IndexMut, Sub};
+#[derive(Resource)]
+pub struct ChunkMapModified {
+    pub visual_modified: bool,
+}
+impl Default for ChunkMapModified {
+    fn default() -> Self {
+        Self {
+            visual_modified: true,
+        }
+    }
+}
 #[derive(Resource, Default, Clone)]
 pub struct ChunkMap {
     pub chunks: MatrixBounded<Chunk>,
-    pub any_modified: bool,
+}
+#[derive(Resource, Default, Clone)]
+pub struct VoxelChunkMap {
+    pub chunks: MatrixBounded<VoxelChunk>,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
