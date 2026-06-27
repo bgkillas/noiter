@@ -2,7 +2,7 @@ use crate::cell::{
     CellColor, CellData, CellDataFire, CellDataGas, CellDataGranular, CellDataLiquid,
     CellDataStatic, CellDataType,
 };
-pub const CELLS: [CellData; 10] = [
+pub static CELLS: [CellData; 10] = [
     CellData {
         id: 0,
         color: CellColor::AIR,

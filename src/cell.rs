@@ -1,18 +1,26 @@
 use crate::cells::CELLS;
 use bevy::diagnostic::FrameCount;
 use std::{mem, ptr};
+#[derive(Debug)]
 pub struct CellData {
     pub id: usize,
     pub color: CellColor,
     pub name: &'static str,
     pub type_data: CellDataType,
 }
+#[derive(Debug)]
 pub struct CellDataPhysics {}
+#[derive(Debug)]
 pub struct CellDataStatic {}
+#[derive(Debug)]
 pub struct CellDataGranular {}
+#[derive(Debug)]
 pub struct CellDataLiquid {}
+#[derive(Debug)]
 pub struct CellDataGas {}
+#[derive(Debug)]
 pub struct CellDataFire {}
+#[derive(Debug)]
 pub enum CellDataType {
     Physics(CellDataPhysics),
     Static(CellDataStatic),
