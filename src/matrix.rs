@@ -283,6 +283,9 @@ impl<'a, T> Iterator for MatrixBoundedIterMut<'a, T> {
     type Item = (MatrixIndex, &'a mut Option<T>);
     fn next(&mut self) -> Option<Self::Item> {
         if self.min_elem.x > self.max_elem.x {
+            return None;
+        }
+        if self.min_elem.x > self.max_elem.x {
             self.min_elem.x = self.min_elem_x;
             self.min_elem.y += 1;
         }

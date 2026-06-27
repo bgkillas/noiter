@@ -25,3 +25,9 @@ pub const CHUNK_HEIGHT: usize = 256;
 pub const CHUNK_MAP_WIDTH: usize = 256;
 pub const CHUNK_MAP_HEIGHT: usize = 256;
 pub type ChunkIndexType = u8;
+#[cfg(feature = "wasm")]
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+fn wasm_hook() {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    app::app_run();
+}
