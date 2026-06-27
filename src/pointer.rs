@@ -13,7 +13,10 @@ pub fn spawn_cells(
     mut pressed: Local<bool>,
 ) {
     let (camera, camera_transform) = camera_single.into_inner();
-    if pointer.pressed(MouseButton::Left) || pointer.pressed(MouseButton::Right) {
+    let left = pointer.pressed(MouseButton::Left);
+    let mid = pointer.pressed(MouseButton::Middle);
+    let right = pointer.pressed(MouseButton::Right);
+    if left || mid || right {
         if !*pressed
             && let Some(pos) = window
                 .cursor_position()
@@ -27,8 +30,10 @@ pub fn spawn_cells(
                 world.set(
                     &mut voxel_world,
                     index,
-                    if pointer.pressed(MouseButton::Left) {
+                    if left {
                         9
+                    } else if mid {
+                        3
                     } else {
                         2
                     },

@@ -2,13 +2,11 @@ use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
     CHUNK_HEIGHT, CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, PIXEL_LENGTH, PIXEL_SCALE,
 };
-use avian2d::prelude::{Collider, GravityScale, RigidBody, SleepingDisabled};
 use bevy::asset::{Assets, RenderAssetUsages};
 use bevy::camera::{Camera2d, OrthographicProjection, Projection};
-use bevy::color::Color;
 use bevy::ecs::system::Commands;
 use bevy::image::Image;
-use bevy::math::{Vec2, Vec3};
+use bevy::math::Vec3;
 use bevy::prelude::{ResMut, Transform};
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite::Sprite;
@@ -39,15 +37,5 @@ pub fn startup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         Sprite::from_image(handle.clone()),
         Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(PIXEL_SCALE)),
     ));
-    for i in 2..8 {
-        commands.spawn((
-            RigidBody::Dynamic,
-            GravityScale(4.0 * PIXEL_SCALE),
-            SleepingDisabled,
-            Collider::rectangle(8.0 * PIXEL_SCALE, 8.0 * PIXEL_SCALE),
-            Sprite::from_color(Color::WHITE, Vec2::splat(8.0 * PIXEL_SCALE)),
-            Transform::from_xyz(x, y + PIXEL_SCALE * i as f32 * CHUNK_HEIGHT as f32, 0.0),
-        ));
-    }
     commands.insert_resource(WorldImageHandle(handle));
 }

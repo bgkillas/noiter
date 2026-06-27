@@ -105,7 +105,7 @@ impl ChunkMap {
         bern: Bernoulli,
         uni: Uniform<usize>,
     ) {
-        for y in 0..=(CHUNK_HEIGHT - 1).strict_cast::<ChunkIndexType>() {
+        for y in (0..=(CHUNK_HEIGHT - 1).strict_cast::<ChunkIndexType>()).rev() {
             for x in 0..=(CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() {
                 let index = FullIndex {
                     cell_index: MatrixIndex {
@@ -141,7 +141,6 @@ impl ChunkMap {
         cell.last_changed = frame;
         match cell.cell_type {
             CellType::Liquid => {
-                //TODO not going left properly
                 let check = if rand.sample(bern) {
                     [
                         index - (0, 1),
