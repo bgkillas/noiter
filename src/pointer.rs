@@ -23,6 +23,7 @@ pub fn spawn_cells(
             let py = (pos.y / PIXEL_SCALE).floor();
             for (x, y) in shapes::circle::Circle::new(px as usize, py as usize, 8) {
                 let index = FullIndex::from((x.strict_cast::<u16>(), y.strict_cast::<u16>()));
+                world.load(&mut voxel_world, index.chunk_index);
                 world.set(&mut voxel_world, index, 9);
             }
         }
