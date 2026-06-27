@@ -107,4 +107,7 @@ impl Cell {
             CellType::Liquid | CellType::Gas | CellType::Air
         ) && !ptr::eq(self.cell_data, other.cell_data)
     }
+    pub fn into(&mut self, id: usize) {
+        *self = Cell::new(id);
+    }
 }

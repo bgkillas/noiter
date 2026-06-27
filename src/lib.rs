@@ -12,6 +12,7 @@ pub mod chunk;
 pub mod chunk_map;
 pub mod collider_world;
 pub mod matrix;
+pub mod pointer;
 pub mod simulate_world;
 pub mod startup;
 pub mod uninit_cell_map;

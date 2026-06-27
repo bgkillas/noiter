@@ -2,6 +2,7 @@ use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, VoxelChunkMap};
 use crate::collider_world::update_colliders;
+use crate::pointer::spawn_cells;
 use crate::simulate_world::simulate_world;
 use crate::startup::startup;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
@@ -66,7 +67,10 @@ pub fn app_run() -> AppExit {
             (on_resize_world, display_world).chain(),
         ),
     );
-    app.add_systems(FixedUpdate, (move_camera, zoom_camera, simulate_world));
+    app.add_systems(
+        FixedUpdate,
+        (move_camera, zoom_camera, spawn_cells, simulate_world),
+    );
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

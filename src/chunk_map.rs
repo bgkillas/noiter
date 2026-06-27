@@ -105,6 +105,16 @@ impl ChunkMap {
             .as_mut()
             .map(|c| &mut c[index.cell_index])
     }
+    pub fn set(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: FullIndex, id: usize) {
+        if let Some(cell) = self.get_mut(index) {
+            let old = cell.is_collider();
+            cell.into(id);
+            let new = cell.is_collider();
+            if new != old {
+                voxel_chunk_map.add_voxel(index, new);
+            }
+        }
+    }
     pub fn insert(
         &mut self,
         voxel_chunk_map: &mut VoxelChunkMap,
