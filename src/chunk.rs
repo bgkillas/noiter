@@ -23,7 +23,7 @@ impl Chunk {
         let voxel = shape.make_mut().as_voxels_mut().unwrap();
         let mut voxels = 0;
         unsafe {
-            let ptr = cells.as_mut_ptr().as_mut().unwrap();
+            let ptr = cells.as_mut_ptr().cast::<Cell>();
             for y in 0..CHUNK_MAP_HEIGHT {
                 for x in 0..CHUNK_MAP_HEIGHT {
                     let cell_index = MatrixIndex::new(x, y);
@@ -32,7 +32,7 @@ impl Chunk {
                         voxels += 1;
                         voxel.set_voxel(cell_index.into(), true);
                     }
-                    *ptr.index_mut(cell_index) = cell;
+                    *ptr.add(cell_index.flatten().strict_cast()) = cell;
                 }
             }
             (
