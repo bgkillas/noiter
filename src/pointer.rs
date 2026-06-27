@@ -13,7 +13,7 @@ pub fn spawn_cells(
     mut pressed: Local<bool>,
 ) {
     let (camera, camera_transform) = camera_single.into_inner();
-    if pointer.pressed(MouseButton::Left) {
+    if pointer.pressed(MouseButton::Left) || pointer.pressed(MouseButton::Right) {
         if !*pressed
             && let Some(pos) = window
                 .cursor_position()
@@ -24,7 +24,15 @@ pub fn spawn_cells(
             for (x, y) in shapes::circle::Circle::new(px as usize, py as usize, 8) {
                 let index = FullIndex::from((x.strict_cast::<u16>(), y.strict_cast::<u16>()));
                 world.load(&mut voxel_world, index.chunk_index);
-                world.set(&mut voxel_world, index, 9);
+                world.set(
+                    &mut voxel_world,
+                    index,
+                    if pointer.pressed(MouseButton::Left) {
+                        9
+                    } else {
+                        2
+                    },
+                );
             }
         }
         *pressed = true;

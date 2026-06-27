@@ -1,7 +1,3 @@
-use crate::cell::Cell;
-use crate::chunk::Chunk;
-use crate::chunk_map::{ChunkMap, FullIndex, VoxelChunkMap};
-use crate::matrix::MatrixIndex;
 use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
     CHUNK_HEIGHT, CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, PIXEL_LENGTH, PIXEL_SCALE,
@@ -16,14 +12,7 @@ use bevy::math::{Vec2, Vec3};
 use bevy::prelude::{ResMut, Transform};
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite::Sprite;
-use shapes::circumference::Circumference;
-use shapes::octant::octant;
-pub fn startup(
-    mut commands: Commands,
-    mut chunk_map: ResMut<ChunkMap>,
-    mut voxel_chunk_map: ResMut<VoxelChunkMap>,
-    mut images: ResMut<Assets<Image>>,
-) {
+pub fn startup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let x = PIXEL_SCALE * (CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2) as f32;
     let y = PIXEL_SCALE * (CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2) as f32;
     let mut ortho = OrthographicProjection::default_2d();
@@ -33,60 +22,6 @@ pub fn startup(
         Projection::Orthographic(ortho),
         Transform::from_xyz(x, y, 0.0),
     ));
-    let x0 = CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2;
-    let y0 = CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2;
-    for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 2..=CHUNK_MAP_HEIGHT / 2 + 1 {
-        for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 2..=CHUNK_MAP_WIDTH / 2 + 1 {
-            let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
-            chunk_map.insert(
-                &mut voxel_chunk_map,
-                chunk_index,
-                Chunk::new(|cell_index| {
-                    if y0.abs_diff(
-                        cell_index.y.strict_cast::<usize>()
-                            + CHUNK_HEIGHT * chunk_index.y.strict_cast::<usize>(),
-                    ) > x0.abs_diff(
-                        cell_index.x.strict_cast::<usize>()
-                            + CHUNK_WIDTH * chunk_index.x.strict_cast::<usize>(),
-                    ) {
-                        0
-                    } else {
-                        (cell_index.x % 5 + cell_index.y % 5 + 1).strict_cast()
-                    }
-                }),
-            );
-        }
-    }
-    for r in 0..=128 {
-        for (dx, dy) in Circumference::new(r) {
-            octant(x0, y0, dx, dy, |_, x, y| {
-                let index = FullIndex::from((x.strict_cast(), y.strict_cast()));
-                if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index]
-                    && let Some(voxel_chunk) = &mut voxel_chunk_map.chunks[index.chunk_index]
-                {
-                    let cell = Cell::new(r % 9 + 1);
-                    if cell.is_collider() {
-                        voxel_chunk
-                            .shape
-                            .make_mut()
-                            .as_voxels_mut()
-                            .unwrap()
-                            .set_voxel(index.cell_index.into(), true);
-                        voxel_chunk.voxels += 1;
-                    } else if chunk[index.cell_index].is_collider() {
-                        voxel_chunk
-                            .shape
-                            .make_mut()
-                            .as_voxels_mut()
-                            .unwrap()
-                            .set_voxel(index.cell_index.into(), false);
-                        voxel_chunk.voxels -= 1;
-                    }
-                    chunk[index.cell_index] = cell;
-                }
-            });
-        }
-    }
     let image = Image::new(
         Extent3d {
             width: 0,
