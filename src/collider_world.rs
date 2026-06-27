@@ -15,10 +15,10 @@ impl VoxelChunkMap {
                 continue;
             }
             chunk.voxels_modified = false;
-            if let Some(ent) = chunk.collider {
-                commands.entity(ent).despawn();
-            }
             if chunk.voxels == 0 {
+                if let Some(ent) = chunk.collider {
+                    commands.entity(ent).despawn();
+                }
                 chunk.collider = None;
                 continue;
             }
@@ -37,7 +37,9 @@ impl VoxelChunkMap {
                 ),
                 ChunkCollider,
             ));
-            chunk.collider = Some(ent.id());
+            if let Some(e) = chunk.collider.replace(ent.id()) {
+                commands.entity(e).despawn();
+            }
         }
     }
 }
