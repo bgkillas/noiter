@@ -38,21 +38,23 @@ pub fn startup(
     for chunk_y_index in CHUNK_MAP_HEIGHT / 2 - 2..=CHUNK_MAP_HEIGHT / 2 + 1 {
         for chunk_x_index in CHUNK_MAP_WIDTH / 2 - 2..=CHUNK_MAP_WIDTH / 2 + 1 {
             let chunk_index = MatrixIndex::new(chunk_x_index, chunk_y_index);
-            let (chunk, voxel_chunk) = Chunk::new(|cell_index| {
-                if y0.abs_diff(
-                    cell_index.y.strict_cast::<usize>()
-                        + CHUNK_HEIGHT * chunk_index.y.strict_cast::<usize>(),
-                ) > x0.abs_diff(
-                    cell_index.x.strict_cast::<usize>()
-                        + CHUNK_WIDTH * chunk_index.x.strict_cast::<usize>(),
-                ) {
-                    0
-                } else {
-                    (cell_index.x % 4 + cell_index.y % 4 + 1).strict_cast()
-                }
-            });
-            chunk_map.chunks.insert(chunk_index, chunk);
-            voxel_chunk_map.chunks.insert(chunk_index, voxel_chunk);
+            chunk_map.insert(
+                &mut voxel_chunk_map,
+                chunk_index,
+                Chunk::new(|cell_index| {
+                    if y0.abs_diff(
+                        cell_index.y.strict_cast::<usize>()
+                            + CHUNK_HEIGHT * chunk_index.y.strict_cast::<usize>(),
+                    ) > x0.abs_diff(
+                        cell_index.x.strict_cast::<usize>()
+                            + CHUNK_WIDTH * chunk_index.x.strict_cast::<usize>(),
+                    ) {
+                        0
+                    } else {
+                        (cell_index.x % 5 + cell_index.y % 5 + 1).strict_cast()
+                    }
+                }),
+            );
         }
     }
     for r in 0..=128 {
@@ -62,7 +64,7 @@ pub fn startup(
                 if let Some(chunk) = &mut chunk_map.chunks[index.chunk_index]
                     && let Some(voxel_chunk) = &mut voxel_chunk_map.chunks[index.chunk_index]
                 {
-                    let cell = Cell::new(r % 8 + 1);
+                    let cell = Cell::new(r % 9 + 1);
                     if cell.is_collider() {
                         voxel_chunk
                             .shape

@@ -1,5 +1,5 @@
 use crate::cell::CellType;
-use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex};
+use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use bevy::diagnostic::FrameCount;
 use bevy::prelude::{Local, Res, ResMut};
@@ -11,15 +11,17 @@ use std::time::Instant;
 const TIME_ALLOCATED: u128 = 4096;
 pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
+    mut voxel_world: ResMut<VoxelChunkMap>,
     mut modified: ResMut<ChunkMapModified>,
     frame: Res<FrameCount>,
     mut first_chunk: Local<usize>,
 ) {
-    world.simulate::<TIME_ALLOCATED>(&mut modified, *frame, &mut first_chunk);
+    world.simulate::<TIME_ALLOCATED>(&mut voxel_world, &mut modified, *frame, &mut first_chunk);
 }
 impl ChunkMap {
     pub fn simulate<const TIME_ALLOCATED: u128>(
         &mut self,
+        voxel_world: &mut VoxelChunkMap,
         modified: &mut ChunkMapModified,
         frame: FrameCount,
         first_chunk: &mut usize,
@@ -27,6 +29,7 @@ impl ChunkMap {
         let mut rand: SmallRng = make_rng();
         let tmr = Instant::now();
         if self.go_through_chunks::<TIME_ALLOCATED>(
+            voxel_world,
             modified,
             frame,
             first_chunk,
@@ -40,6 +43,7 @@ impl ChunkMap {
             let upto = *first_chunk;
             *first_chunk = 0;
             self.go_through_chunks::<TIME_ALLOCATED>(
+                voxel_world,
                 modified,
                 frame,
                 first_chunk,
@@ -51,6 +55,7 @@ impl ChunkMap {
     }
     fn go_through_chunks<const TIME_ALLOCATED: u128>(
         &mut self,
+        voxel_world: &mut VoxelChunkMap,
         modified: &mut ChunkMapModified,
         frame: FrameCount,
         first_chunk: &mut usize,
@@ -71,7 +76,7 @@ impl ChunkMap {
                     return false;
                 }
                 if k > *first_chunk {
-                    self.simulate_chunk(chunk_index, modified, frame, rand);
+                    self.simulate_chunk(voxel_world, chunk_index, modified, frame, rand);
                 }
                 if tmr.elapsed().as_micros() > TIME_ALLOCATED {
                     *first_chunk = k;
@@ -83,6 +88,7 @@ impl ChunkMap {
     }
     pub fn simulate_chunk(
         &mut self,
+        voxel_world: &mut VoxelChunkMap,
         chunk_index: MatrixIndex,
         modified: &mut ChunkMapModified,
         frame: FrameCount,
@@ -94,11 +100,12 @@ impl ChunkMap {
                 cell_index,
                 chunk_index,
             };
-            self.simulate_cell(index, modified, frame, rand);
+            self.simulate_cell(voxel_world, index, modified, frame, rand);
         }
     }
     pub fn simulate_cell(
         &mut self,
+        voxel_world: &mut VoxelChunkMap,
         index: FullIndex,
         modified: &mut ChunkMapModified,
         frame: FrameCount,
@@ -130,44 +137,69 @@ impl ChunkMap {
                         index + (1, 0),
                     ]
                 };
-                self.swap_from_list(index, modified, check);
+                self.swap_from_list(voxel_world, index, modified, check);
+            }
+            CellType::Granular => {
+                let check = if rand.random_bool(0.5) {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) + (1, 0),
+                        index - (0, 1) - (1, 0),
+                    ]
+                } else {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) - (1, 0),
+                        index - (0, 1) + (1, 0),
+                    ]
+                };
+                self.swap_from_list(voxel_world, index, modified, check);
             }
             CellType::Gas => {
-                let check = [match rand.random_range(0..9) {
+                let check = [match rand.random_range(0..6) {
                     0 => index + (0, 1) - (1, 0),
                     1 => index + (0, 1),
                     2 => index + (1, 1),
                     3 => index - (1, 0),
                     4 => index,
                     5 => index + (1, 0),
-                    6 => index - (1, 1),
-                    7 => index - (0, 1),
-                    8 => index - (0, 1) + (1, 0),
                     _ => unreachable!(),
                 }];
-                self.swap_from_list(index, modified, check);
+                self.swap_from_list(voxel_world, index, modified, check);
             }
             _ => {}
         }
     }
     pub fn swap_from_list<const N: usize>(
         &mut self,
+        voxel_world: &mut VoxelChunkMap,
         index: FullIndex,
         modified: &mut ChunkMapModified,
         check: [FullIndex; N],
     ) {
         for swap_index in check {
-            if self.try_swap(index, swap_index) {
+            if self.try_swap(voxel_world, index, swap_index) {
                 modified.visual_modified = true;
                 return;
             }
         }
     }
-    pub fn try_swap(&mut self, index: FullIndex, swap_index: FullIndex) -> bool {
+    pub fn try_swap(
+        &mut self,
+        voxel_world: &mut VoxelChunkMap,
+        index: FullIndex,
+        swap_index: FullIndex,
+    ) -> bool {
         if let Some(cell) = self.get(index)
             && let Some(other) = self.get(swap_index)
             && cell.can_move(other)
         {
+            let is_a = cell.is_collider();
+            let is_b = other.is_collider();
+            if is_a != is_b {
+                voxel_world.add_voxel(swap_index, is_a);
+                voxel_world.add_voxel(index, is_b);
+            }
             self.swap(index, swap_index);
             true
         } else {

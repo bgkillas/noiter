@@ -105,6 +105,19 @@ impl ChunkMap {
             .as_mut()
             .map(|c| &mut c[index.cell_index])
     }
+    pub fn insert(
+        &mut self,
+        voxel_chunk_map: &mut VoxelChunkMap,
+        index: MatrixIndex,
+        (chunk, voxel_chunk): (Chunk, VoxelChunk),
+    ) {
+        self.chunks.insert(index, chunk);
+        voxel_chunk_map.chunks.insert(index, voxel_chunk);
+    }
+    pub fn remove(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: MatrixIndex) {
+        self.chunks.remove(index);
+        voxel_chunk_map.chunks.remove(index);
+    }
 }
 impl Index<MatrixIndex> for ChunkMap {
     type Output = Option<Chunk>;
@@ -115,5 +128,34 @@ impl Index<MatrixIndex> for ChunkMap {
 impl IndexMut<MatrixIndex> for ChunkMap {
     fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
         &mut self.chunks[index]
+    }
+}
+impl Index<MatrixIndex> for VoxelChunkMap {
+    type Output = Option<VoxelChunk>;
+    fn index(&self, index: MatrixIndex) -> &Self::Output {
+        &self.chunks[index]
+    }
+}
+impl IndexMut<MatrixIndex> for VoxelChunkMap {
+    fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
+        &mut self.chunks[index]
+    }
+}
+impl VoxelChunkMap {
+    pub fn add_voxel(&mut self, index: FullIndex, into: bool) {
+        if let Some(chunk) = &mut self[index.chunk_index] {
+            chunk.voxels_modified = true;
+            chunk
+                .shape
+                .make_mut()
+                .as_voxels_mut()
+                .unwrap()
+                .set_voxel(index.cell_index.into(), into);
+            if into {
+                chunk.voxels += 1;
+            } else {
+                chunk.voxels -= 1;
+            }
+        }
     }
 }

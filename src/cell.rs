@@ -1,21 +1,22 @@
 use crate::cells::CELLS;
 use bevy::diagnostic::FrameCount;
-use std::mem;
+use std::{mem, ptr};
 pub struct CellData {
     pub id: usize,
     pub color: CellColor,
     pub name: &'static str,
     pub type_data: CellDataType,
-    pub cell_type: CellType,
 }
 pub struct CellDataPhysics {}
 pub struct CellDataStatic {}
+pub struct CellDataGranular {}
 pub struct CellDataLiquid {}
 pub struct CellDataGas {}
 pub struct CellDataFire {}
 pub enum CellDataType {
     Physics(CellDataPhysics),
     Static(CellDataStatic),
+    Granular(CellDataGranular),
     Liquid(CellDataLiquid),
     Gas(CellDataGas),
     Fire(CellDataFire),
@@ -25,10 +26,25 @@ pub enum CellDataType {
 pub enum CellType {
     Physics,
     Static,
+    Granular,
     Liquid,
     Gas,
     Fire,
     Air,
+}
+impl CellDataType {
+    #[must_use]
+    pub fn cell_type(&self) -> CellType {
+        match self {
+            CellDataType::Physics(_) => CellType::Physics,
+            CellDataType::Static(_) => CellType::Static,
+            CellDataType::Granular(_) => CellType::Granular,
+            CellDataType::Liquid(_) => CellType::Liquid,
+            CellDataType::Gas(_) => CellType::Gas,
+            CellDataType::Fire(_) => CellType::Fire,
+            CellDataType::Air => CellType::Air,
+        }
+    }
 }
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
@@ -72,7 +88,7 @@ impl Cell {
         Self {
             color: cell_data.color,
             cell_data,
-            cell_type: cell_data.cell_type,
+            cell_type: cell_data.type_data.cell_type(),
             last_changed: FrameCount(0),
         }
     }
@@ -82,15 +98,13 @@ impl Cell {
     }
     #[must_use]
     pub fn is_collider(&self) -> bool {
-        matches!(self.cell_type, CellType::Static)
+        matches!(self.cell_type, CellType::Static | CellType::Granular)
     }
     #[must_use]
     pub fn can_move(&self, other: &Self) -> bool {
-        matches!(self.cell_type, CellType::Liquid | CellType::Gas)
-            && matches!(
-                other.cell_type,
-                CellType::Liquid | CellType::Gas | CellType::Air
-            )
-            && self.cell_data.id != other.cell_data.id
+        matches!(
+            other.cell_type,
+            CellType::Liquid | CellType::Gas | CellType::Air
+        ) && !ptr::eq(self.cell_data, other.cell_data)
     }
 }
