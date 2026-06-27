@@ -15,11 +15,11 @@ impl Default for ChunkMapModified {
         }
     }
 }
-#[derive(Resource, Default, Clone)]
+#[derive(Resource, Default)]
 pub struct ChunkMap {
     pub chunks: MatrixBounded<Chunk>,
 }
-#[derive(Resource, Default, Clone)]
+#[derive(Resource, Default)]
 pub struct VoxelChunkMap {
     pub chunks: MatrixBounded<VoxelChunk>,
 }

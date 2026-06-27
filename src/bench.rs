@@ -85,6 +85,6 @@ fn bench_simulate(bencher: &mut Bencher) {
     let mut modified = ChunkMapModified::default();
     bencher.iter(|| {
         i += 1;
-        chunk_map.simulate(&mut modified, FrameCount(i));
+        chunk_map.simulate::<u128::MAX>(&mut modified, FrameCount(i), &mut 0);
     })
 }

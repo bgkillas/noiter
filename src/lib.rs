@@ -18,7 +18,7 @@ pub mod uninit_cell_map;
 pub mod world_image;
 extern crate test;
 pub const PIXEL_SCALE: f32 = 1.0;
-pub const PIXEL_LENGTH: u32 = 16;
+pub const PIXEL_LENGTH: u32 = 4;
 pub const CHUNK_WIDTH: usize = 256;
 pub const CHUNK_HEIGHT: usize = 256;
 pub const CHUNK_MAP_WIDTH: usize = 256;

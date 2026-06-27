@@ -2,9 +2,7 @@ use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, VoxelChunkMap};
 use crate::collider_world::update_colliders;
-use crate::simulate_world::{
-    ChunkMapNext, VoxelChunkMapNext, chunk_map_next, simulate_world, voxel_chunk_map_next,
-};
+use crate::simulate_world::simulate_world;
 use crate::startup::startup;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
 use avian2d::PhysicsPlugins;
@@ -57,8 +55,6 @@ pub fn app_run() -> AppExit {
     );
     app.insert_resource(ChunkMap::default());
     app.insert_resource(VoxelChunkMap::default());
-    app.insert_resource(ChunkMapNext::default());
-    app.insert_resource(VoxelChunkMapNext::default());
     app.insert_resource(ChunkMapModified::default());
     app.insert_resource(ClearColor(Color::srgba_u32(0x96b7_ddff)));
     app.add_systems(Startup, startup);
@@ -70,14 +66,7 @@ pub fn app_run() -> AppExit {
             (on_resize_world, display_world).chain(),
         ),
     );
-    app.add_systems(
-        FixedUpdate,
-        (
-            move_camera,
-            zoom_camera,
-            (simulate_world, (chunk_map_next, voxel_chunk_map_next)).chain(),
-        ),
-    );
+    app.add_systems(FixedUpdate, (move_camera, zoom_camera, simulate_world));
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

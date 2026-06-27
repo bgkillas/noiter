@@ -12,7 +12,7 @@ use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::window::WindowResized;
 #[derive(Resource, Deref, DerefMut)]
 pub struct PixelLength(pub u32);
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug)]
 pub struct WorldImage {
     pub width: u16,
     pub height: u16,

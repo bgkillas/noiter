@@ -1,46 +1,85 @@
 use crate::cell::CellType;
-use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
+use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex};
 use crate::matrix::MatrixIndex;
 use bevy::diagnostic::FrameCount;
-use bevy::prelude::{Deref, DerefMut, Res, ResMut, Resource};
+use bevy::prelude::{Local, Res, ResMut};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
 use std::mem;
 use std::range::RangeInclusive;
-#[derive(Resource, Default, Deref, DerefMut)]
-pub struct ChunkMapNext {
-    chunk_map: ChunkMap,
-}
-#[derive(Resource, Default, Deref, DerefMut)]
-pub struct VoxelChunkMapNext {
-    voxel_chunk_map: VoxelChunkMap,
-}
+use std::time::Instant;
+const TIME_ALLOCATED: u128 = 4096;
 pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
     mut modified: ResMut<ChunkMapModified>,
     frame: Res<FrameCount>,
+    mut first_chunk: Local<usize>,
 ) {
-    world.simulate(&mut modified, *frame);
-}
-pub fn chunk_map_next(_: ResMut<ChunkMap>, _: Res<ChunkMapNext>) {
-    //TODO
-}
-pub fn voxel_chunk_map_next(_: ResMut<VoxelChunkMap>, _: Res<VoxelChunkMapNext>) {
-    //TODO
+    world.simulate::<TIME_ALLOCATED>(&mut modified, *frame, &mut first_chunk);
 }
 impl ChunkMap {
-    pub fn simulate(&mut self, modified: &mut ChunkMapModified, frame: FrameCount) {
+    pub fn simulate<const TIME_ALLOCATED: u128>(
+        &mut self,
+        modified: &mut ChunkMapModified,
+        frame: FrameCount,
+        first_chunk: &mut usize,
+    ) {
         let mut rand: SmallRng = make_rng();
+        let tmr = Instant::now();
+        if self.go_through_chunks::<TIME_ALLOCATED>(
+            modified,
+            frame,
+            first_chunk,
+            usize::MAX,
+            tmr,
+            &mut rand,
+        ) {
+            return;
+        }
+        if *first_chunk != 0 {
+            let upto = *first_chunk;
+            *first_chunk = 0;
+            self.go_through_chunks::<TIME_ALLOCATED>(
+                modified,
+                frame,
+                first_chunk,
+                upto,
+                tmr,
+                &mut rand,
+            );
+        }
+    }
+    fn go_through_chunks<const TIME_ALLOCATED: u128>(
+        &mut self,
+        modified: &mut ChunkMapModified,
+        frame: FrameCount,
+        first_chunk: &mut usize,
+        upto: usize,
+        tmr: Instant,
+        rand: &mut SmallRng,
+    ) -> bool {
         let min_x = self.chunks.min_elem.x;
         let max_x = self.chunks.max_elem.x;
         let min_y = self.chunks.min_elem.y;
         let max_y = self.chunks.max_elem.y;
+        let mut k = 0;
         for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
             let chunk_index = MatrixIndex { x, y };
             if self[chunk_index].is_some() {
-                self.simulate_chunk(chunk_index, modified, frame, &mut rand);
+                k += 1;
+                if k > upto {
+                    return false;
+                }
+                if k > *first_chunk {
+                    self.simulate_chunk(chunk_index, modified, frame, rand);
+                }
+                if tmr.elapsed().as_micros() > TIME_ALLOCATED {
+                    *first_chunk = k;
+                    return true;
+                }
             }
         }
+        false
     }
     pub fn simulate_chunk(
         &mut self,
