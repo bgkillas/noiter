@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
+    - uses: extractions/setup-just@v3
     - name: Install wayland
       run: sudo apt install -y libwayland-dev
     - name: Temporarily modify the rust toolchain version
@@ -32,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
+    - uses: extractions/setup-just@v3
     - name: Install wayland
       run: sudo apt install -y libwayland-dev
     - name: Temporarily modify the rust toolchain version
@@ -48,6 +50,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v6
+    - uses: extractions/setup-just@v3
     - name: Temporarily modify the rust toolchain version
       run: rustup override set nightly
     - name: Install nightly components
@@ -62,6 +65,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6
+    - uses: extractions/setup-just@v3
     - name: Temporarily modify the rust toolchain version
       run: rustup override set nightly
     - name: Install nightly components
