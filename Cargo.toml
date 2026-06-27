@@ -30,6 +30,7 @@ wasm = ["getrandom/wasm_js", "dep:wasm-bindgen", "dep:console_error_panic_hook"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "noiter_lib"
 
 [dependencies]
 bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "bevy_settings"]}

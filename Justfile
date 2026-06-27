@@ -23,10 +23,10 @@ wasm:
     cd www && wasm-pack build --no-opt --out-dir www/pkg --target web --debug --features "wasm"
 wasm_rel:
     cd www && wasm-pack build --no-opt --out-dir www/pkg --target web --release --features "wasm"
-    cd www && wasm-opt -O4 -all -o pkg/ucalc_bg.wasm pkg/ucalc_bg.wasm
+    cd www && wasm-opt -O4 -all -o pkg/noiter_bg.wasm pkg/noiter_bg.wasm
 wasm_full:
     cd www && wasm-pack build --no-opt --out-dir www/pkg --target web --profile release_lto --features "wasm"
-    cd www && wasm-opt -O4 -all -o pkg/ucalc_bg.wasm pkg/ucalc_bg.wasm
+    cd www && wasm-opt -O4 -all -o pkg/noiter_bg.wasm pkg/noiter_bg.wasm
 run_wasm:
     cd www && python3 -m http.server 8080
 update:
