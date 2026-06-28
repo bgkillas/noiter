@@ -3,7 +3,7 @@ use crate::chunk::{Chunk, VoxelChunk};
 use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::ecs::resource::Resource;
-use std::ops::{Add, Index, IndexMut, Sub};
+use std::ops::{Add, Deref, DerefMut, Index, IndexMut, Sub};
 #[derive(Resource)]
 pub struct ChunkMapModified {
     pub visual_modified: bool,
@@ -172,5 +172,27 @@ impl VoxelChunkMap {
                 chunk.voxels -= 1;
             }
         }
+    }
+}
+impl Deref for ChunkMap {
+    type Target = MatrixBounded<Chunk>;
+    fn deref(&self) -> &Self::Target {
+        &self.chunks
+    }
+}
+impl DerefMut for ChunkMap {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.chunks
+    }
+}
+impl Deref for VoxelChunkMap {
+    type Target = MatrixBounded<VoxelChunk>;
+    fn deref(&self) -> &Self::Target {
+        &self.chunks
+    }
+}
+impl DerefMut for VoxelChunkMap {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.chunks
     }
 }
