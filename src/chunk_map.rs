@@ -159,18 +159,22 @@ impl IndexMut<MatrixIndex> for VoxelChunkMap {
 impl VoxelChunkMap {
     pub fn add_voxel(&mut self, index: FullIndex, into: bool) {
         if let Some(chunk) = &mut self[index.chunk_index] {
-            chunk.voxels_modified = true;
-            chunk
-                .shape
-                .make_mut()
-                .as_voxels_mut()
-                .unwrap()
-                .set_voxel(index.cell_index.into(), into);
-            if into {
-                chunk.voxels += 1;
-            } else {
-                chunk.voxels -= 1;
-            }
+            chunk.add_voxel(index.cell_index, into);
+        }
+    }
+}
+impl VoxelChunk {
+    pub fn add_voxel(&mut self, index: MatrixIndex, into: bool) {
+        self.voxels_modified = true;
+        self.shape
+            .make_mut()
+            .as_voxels_mut()
+            .unwrap()
+            .set_voxel(index.into(), into);
+        if into {
+            self.voxels += 1;
+        } else {
+            self.voxels -= 1;
         }
     }
 }

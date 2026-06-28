@@ -1,14 +1,14 @@
+use crate::chunk::{Chunk, VoxelChunk};
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, ChunkIndexType};
 use avian2d::parry::math::IVector;
 use bevy::tasks::ComputeTaskPool;
 use std::hint::assert_unchecked;
 use std::marker::PhantomData;
-use std::mem::{offset_of, MaybeUninit};
+use std::mem::{MaybeUninit, offset_of};
 use std::ops::{Add, Index, IndexMut, Sub};
 use std::ptr::NonNull;
 use std::range::RangeFrom;
 use std::{array, ptr};
-use crate::chunk::{Chunk, VoxelChunk};
 #[derive(Clone)]
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
@@ -255,27 +255,9 @@ impl<T> MatrixBounded<T> {
         self.max_elem.x = self.max_elem.x.max(index.x);
         self.max_elem.y = self.max_elem.y.max(index.y);
     }
-    pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
-        (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
-            (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {
-                let idx = MatrixIndex { x, y };
-                self.matrix[idx].as_ref().map(|c| (idx, c))
-            })
-        })
-    }
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
-        MatrixBoundedIterMut {
-            min_elem_x: self.min_elem.x,
-            min_elem: self.min_elem,
-            max_elem: self.max_elem,
-            matrix: NonNull::new(&raw mut self.matrix).unwrap(),
-            phantom: PhantomData,
-        }
-        .filter_map(|(i, ch)| ch.as_mut().map(|c| (i, c)))
-    }
     pub fn par_iter_mut<R: Send + 'static>(
         &mut self,
-        f: impl Fn(&[(MatrixIndex, &mut T)]) -> R + Send + Sync,
+        f: impl Fn(&mut [(MatrixIndex, &mut T)]) -> R + Send + Sync,
     ) -> Vec<R> {
         #[repr(transparent)]
         struct SendPtr<T>(NonNull<T>);
@@ -296,10 +278,10 @@ impl<T> MatrixBounded<T> {
                 .map(|(i, c)| (i, SendPtr(NonNull::from_mut(c)))),
         );
         task_pool.scope(|scope| {
-            for chunk_ptr in list.chunks(chunk_size) {
+            for chunk_ptr in list.chunks_mut(chunk_size) {
                 scope.spawn(async move {
                     let chunk =
-                        unsafe { &*(ptr::from_ref(chunk_ptr) as *const [(MatrixIndex, &mut T)]) };
+                        unsafe { &mut *(ptr::from_mut(chunk_ptr) as *mut [(MatrixIndex, &mut T)]) };
                     f_ref(chunk)
                 });
             }
@@ -308,7 +290,7 @@ impl<T> MatrixBounded<T> {
     pub fn par_iter_zip_mut<R: Send + 'static, K>(
         &mut self,
         other: &mut MatrixBounded<K>,
-        f: impl Fn(&[(MatrixIndex, &mut T, &mut K)]) -> R + Send + Sync,
+        f: impl Fn(&mut [(MatrixIndex, &mut T, &mut K)]) -> R + Send + Sync,
     ) -> Vec<R> {
         #[repr(transparent)]
         struct SendPtr<T>(*mut T);
@@ -335,15 +317,33 @@ impl<T> MatrixBounded<T> {
             )
         }));
         task_pool.scope(|scope| {
-            for chunk_ptr in list.chunks(chunk_size) {
+            for chunk_ptr in list.chunks_mut(chunk_size) {
                 scope.spawn(async move {
                     let chunk = unsafe {
-                        &*(ptr::from_ref(chunk_ptr) as *const [(MatrixIndex, &mut T, &mut K)])
+                        &mut *(ptr::from_mut(chunk_ptr) as *mut [(MatrixIndex, &mut T, &mut K)])
                     };
                     f_ref(chunk)
                 });
             }
         })
+    }
+    pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
+        (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
+            (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {
+                let idx = MatrixIndex { x, y };
+                self.matrix[idx].as_ref().map(|c| (idx, c))
+            })
+        })
+    }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut T)> {
+        MatrixBoundedIterMut {
+            min_elem_x: self.min_elem.x,
+            min_elem: self.min_elem,
+            max_elem: self.max_elem,
+            matrix: NonNull::new(&raw mut self.matrix).unwrap(),
+            phantom: PhantomData,
+        }
+        .filter_map(|(i, ch)| ch.as_mut().map(|c| (i, c)))
     }
 }
 pub struct MatrixBoundedIterMut<'a, T> {
@@ -356,7 +356,7 @@ pub struct MatrixBoundedIterMut<'a, T> {
 impl<'a, T> Iterator for MatrixBoundedIterMut<'a, T> {
     type Item = (MatrixIndex, &'a mut Option<T>);
     fn next(&mut self) -> Option<Self::Item> {
-        if self.min_elem.x > self.max_elem.x {
+        if self.min_elem_x > self.max_elem.x {
             return None;
         }
         if self.min_elem.x > self.max_elem.x {
