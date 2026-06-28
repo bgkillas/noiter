@@ -62,10 +62,8 @@ fn bench_simulate(bencher: &mut Bencher) {
     chunk_map.insert(&mut voxel_world, MatrixIndex::new(0, 2), Chunk::new(|_| 0));
     chunk_map.insert(&mut voxel_world, MatrixIndex::new(1, 2), Chunk::new(|_| 0));
     let mut i = 0;
-    let mut modified = ChunkMapModified::default();
     bencher.iter(|| {
         i += 1;
-        const MAX: u128 = u128::MAX;
-        chunk_map.simulate::<MAX>(&mut voxel_world, &mut modified, FrameCount(i), &mut 0);
+        chunk_map.simulate_edges(&mut voxel_world, FrameCount(i));
     })
 }

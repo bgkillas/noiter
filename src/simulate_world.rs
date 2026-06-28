@@ -1,111 +1,76 @@
 use crate::cell::CellType;
+use crate::chunk::{Chunk, VoxelChunk};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::diagnostic::FrameCount;
-use bevy::prelude::{Local, Res, ResMut};
+use bevy::prelude::{Res, ResMut};
 use rand::distr::{Bernoulli, Uniform};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
 use std::mem;
-use std::time::Instant;
-const TIME_ALLOCATED: u128 = 4096;
 pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
     mut voxel_world: ResMut<VoxelChunkMap>,
     mut modified: ResMut<ChunkMapModified>,
     frame: Res<FrameCount>,
-    mut first_chunk: Local<usize>,
 ) {
-    world.simulate::<TIME_ALLOCATED>(&mut voxel_world, &mut modified, *frame, &mut first_chunk);
+    modified.visual_modified = true;
+    world.simulate(&mut voxel_world, *frame);
+    world.simulate_edges(&mut voxel_world, *frame);
 }
-impl ChunkMap {
-    pub fn simulate<const TIME_ALLOCATED: u128>(
-        &mut self,
-        voxel_world: &mut VoxelChunkMap,
-        modified: &mut ChunkMapModified,
-        frame: FrameCount,
-        first_chunk: &mut usize,
-    ) {
-        let mut rand: SmallRng = make_rng();
-        let bern = Bernoulli::new(0.5).unwrap();
-        let uni = Uniform::new(0, 6).unwrap();
-        let tmr = Instant::now();
-        if self.go_through_chunks::<TIME_ALLOCATED>(
-            voxel_world,
-            modified,
-            frame,
-            first_chunk,
-            usize::MAX,
-            tmr,
-            &mut rand,
-            bern,
-            uni,
-        ) {
-            return;
-        }
-        if *first_chunk != 0 {
-            let upto = *first_chunk;
-            *first_chunk = 0;
-            self.go_through_chunks::<TIME_ALLOCATED>(
-                voxel_world,
-                modified,
-                frame,
-                first_chunk,
-                upto,
-                tmr,
-                &mut rand,
-                bern,
-                uni,
-            );
+pub struct WorldRand {
+    rng: SmallRng,
+    half: Bernoulli,
+    gas: Uniform<usize>,
+}
+impl Default for WorldRand {
+    fn default() -> Self {
+        Self {
+            rng: make_rng(),
+            half: Bernoulli::new(0.5).unwrap(),
+            gas: Uniform::new(0, 6).unwrap(),
         }
     }
-    fn go_through_chunks<const TIME_ALLOCATED: u128>(
-        &mut self,
-        voxel_world: &mut VoxelChunkMap,
-        modified: &mut ChunkMapModified,
-        frame: FrameCount,
-        first_chunk: &mut usize,
-        upto: usize,
-        tmr: Instant,
-        rand: &mut SmallRng,
-        bern: Bernoulli,
-        uni: Uniform<usize>,
-    ) -> bool {
+}
+impl WorldRand {
+    pub fn half(&mut self) -> bool {
+        self.rng.sample(self.half)
+    }
+    pub fn gas(&mut self) -> usize {
+        self.rng.sample(self.gas)
+    }
+}
+impl ChunkMap {
+    pub fn simulate(&mut self, voxel_world: &mut VoxelChunkMap, frame: FrameCount) {
+        self.par_iter_zip_mut(voxel_world, |slice| {
+            let mut rand = WorldRand::default();
+            for (_, chunk, voxel_chunk) in slice {
+                chunk.simulate(voxel_chunk, &mut rand, frame);
+            }
+        });
+    }
+    pub fn simulate_edges(&mut self, voxel_world: &mut VoxelChunkMap, frame: FrameCount) {
+        let mut rand = WorldRand::default();
         let min_x = self.chunks.min_elem.x;
         let max_x = self.chunks.max_elem.x;
         let min_y = self.chunks.min_elem.y;
         let max_y = self.chunks.max_elem.y;
-        let mut k = 0;
         for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
             let chunk_index = MatrixIndex { x, y };
             if self[chunk_index].is_some() {
-                k += 1;
-                if k > upto {
-                    return false;
-                }
-                if k > *first_chunk {
-                    self.simulate_chunk(voxel_world, chunk_index, modified, frame, rand, bern, uni);
-                }
-                if tmr.elapsed().as_micros() > TIME_ALLOCATED {
-                    *first_chunk = k;
-                    return true;
-                }
+                self.simulate_chunk_edges(voxel_world, chunk_index, frame, &mut rand);
             }
         }
-        false
     }
-    pub fn simulate_chunk(
+    pub fn simulate_chunk_edges(
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         chunk_index: MatrixIndex,
-        modified: &mut ChunkMapModified,
         frame: FrameCount,
-        rand: &mut SmallRng,
-        bern: Bernoulli,
-        uni: Uniform<usize>,
+        rand: &mut WorldRand,
     ) {
-        for y in (0..=(CHUNK_HEIGHT - 1).strict_cast::<ChunkIndexType>()).rev() {
+        /*for y in (0..=(CHUNK_HEIGHT - 1).strict_cast::<ChunkIndexType>()).rev() {
             for x in 0..=(CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() {
                 let index = FullIndex {
                     cell_index: MatrixIndex {
@@ -118,19 +83,16 @@ impl ChunkMap {
                     },
                     chunk_index,
                 };
-                self.simulate_cell(voxel_world, index, modified, frame, rand, bern, uni);
+                self.simulate_cell(voxel_world, index, frame, rand);
             }
-        }
+        }*/
     }
     pub fn simulate_cell(
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         index: FullIndex,
-        modified: &mut ChunkMapModified,
         frame: FrameCount,
-        rand: &mut SmallRng,
-        bern: Bernoulli,
-        uni: Uniform<usize>,
+        rand: &mut WorldRand,
     ) {
         let Some(cell) = self.get_mut(index) else {
             return;
@@ -141,7 +103,7 @@ impl ChunkMap {
         cell.last_changed = frame;
         match cell.cell_type {
             CellType::Liquid => {
-                let check = if rand.sample(bern) {
+                let check = if rand.half() {
                     [
                         index - (0, 1),
                         index - (0, 1) + (1, 0),
@@ -158,10 +120,10 @@ impl ChunkMap {
                         index + (1, 0),
                     ]
                 };
-                self.swap_from_list(voxel_world, index, modified, &check);
+                self.swap_from_list(voxel_world, index, &check);
             }
             CellType::Granular => {
-                let check = if rand.sample(bern) {
+                let check = if rand.half() {
                     [
                         index - (0, 1),
                         index - (0, 1) + (1, 0),
@@ -174,10 +136,10 @@ impl ChunkMap {
                         index - (0, 1) + (1, 0),
                     ]
                 };
-                self.swap_from_list(voxel_world, index, modified, &check);
+                self.swap_from_list(voxel_world, index, &check);
             }
             CellType::Gas => {
-                let check = [match rand.sample(uni) {
+                let check = [match rand.gas() {
                     0 => index + (0, 1) - (1, 0),
                     1 => index + (0, 1),
                     2 => index + (1, 1),
@@ -186,7 +148,7 @@ impl ChunkMap {
                     5 => index + (1, 0),
                     _ => unreachable!(),
                 }];
-                self.swap_from_list(voxel_world, index, modified, &check);
+                self.swap_from_list(voxel_world, index, &check);
             }
             _ => {}
         }
@@ -195,12 +157,10 @@ impl ChunkMap {
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         index: FullIndex,
-        modified: &mut ChunkMapModified,
         check: &[FullIndex],
     ) {
         for swap_index in check.iter().copied() {
             if self.try_swap(voxel_world, index, swap_index) {
-                modified.visual_modified = true;
                 return;
             }
         }
@@ -248,5 +208,119 @@ impl ChunkMap {
         {
             mem::swap(&mut from[index.cell_index], &mut to[swap_index.cell_index]);
         }
+    }
+}
+impl Chunk {
+    pub fn simulate(&mut self, voxel: &mut VoxelChunk, rand: &mut WorldRand, frame: FrameCount) {
+        for y in (1..=(CHUNK_HEIGHT - 2).strict_cast::<ChunkIndexType>()).rev() {
+            for x in 1..=(CHUNK_WIDTH - 2).strict_cast::<ChunkIndexType>() {
+                let index = MatrixIndex {
+                    x: if y.is_multiple_of(2) {
+                        x
+                    } else {
+                        (CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() - x
+                    },
+                    y,
+                };
+                self.simulate_cell(voxel, index, rand, frame);
+            }
+        }
+    }
+    pub fn simulate_cell(
+        &mut self,
+        voxel: &mut VoxelChunk,
+        index: MatrixIndex,
+        rand: &mut WorldRand,
+        frame: FrameCount,
+    ) {
+        if self[index].last_changed == frame {
+            return;
+        }
+        self[index].last_changed = frame;
+        match self[index].cell_type {
+            CellType::Liquid => {
+                let check = if rand.half() {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) + (1, 0),
+                        index - (0, 1) - (1, 0),
+                        index + (1, 0),
+                        index - (1, 0),
+                    ]
+                } else {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) - (1, 0),
+                        index - (0, 1) + (1, 0),
+                        index - (1, 0),
+                        index + (1, 0),
+                    ]
+                };
+                self.swap_from_list(voxel, index, &check);
+            }
+            CellType::Granular => {
+                let check = if rand.half() {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) + (1, 0),
+                        index - (0, 1) - (1, 0),
+                    ]
+                } else {
+                    [
+                        index - (0, 1),
+                        index - (0, 1) - (1, 0),
+                        index - (0, 1) + (1, 0),
+                    ]
+                };
+                self.swap_from_list(voxel, index, &check);
+            }
+            CellType::Gas => {
+                let check = [match rand.gas() {
+                    0 => index + (0, 1) - (1, 0),
+                    1 => index + (0, 1),
+                    2 => index + (1, 1),
+                    3 => index - (1, 0),
+                    4 => index,
+                    5 => index + (1, 0),
+                    _ => unreachable!(),
+                }];
+                self.swap_from_list(voxel, index, &check);
+            }
+            _ => {}
+        }
+    }
+    pub fn swap_from_list(
+        &mut self,
+        voxel: &mut VoxelChunk,
+        index: MatrixIndex,
+        check: &[MatrixIndex],
+    ) {
+        for swap_index in check.iter().copied() {
+            if self.try_swap(voxel, index, swap_index) {
+                return;
+            }
+        }
+    }
+    pub fn try_swap(
+        &mut self,
+        voxel: &mut VoxelChunk,
+        index: MatrixIndex,
+        swap_index: MatrixIndex,
+    ) -> bool {
+        if self[index].can_move(&self[swap_index]) {
+            self.swap(voxel, index, swap_index);
+            true
+        } else {
+            false
+        }
+    }
+    pub fn swap(&mut self, voxel: &mut VoxelChunk, index: MatrixIndex, swap_index: MatrixIndex) {
+        let is_a = self[index].is_collider();
+        let is_b = self[swap_index].is_collider();
+        if is_a != is_b {
+            voxel.add_voxel(swap_index, is_a);
+            voxel.add_voxel(index, is_b);
+        }
+        self.cells.swap(index, swap_index);
     }
 }
