@@ -2,12 +2,13 @@ use crate::cell::CellType;
 use crate::chunk::{Chunk, VoxelChunk};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
-use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
+use crate::{CHUNK_HEIGHT, CHUNK_HEIGHT_LAST, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
 use bevy::diagnostic::FrameCount;
 use bevy::prelude::{Res, ResMut};
 use rand::distr::{Bernoulli, Uniform};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
+use std::hint::cold_path;
 use std::mem;
 pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
@@ -43,9 +44,9 @@ impl WorldRand {
 }
 impl ChunkMap {
     pub fn simulate(&mut self, voxel_world: &mut VoxelChunkMap, frame: FrameCount) {
-        self.par_iter_zip_mut(voxel_world, |slice| {
+        self.par_iter_zip_mut(voxel_world, |iter| {
             let mut rand = WorldRand::default();
-            for (_, chunk, voxel_chunk) in slice {
+            for (_, chunk, voxel_chunk) in iter {
                 chunk.simulate(voxel_chunk, &mut rand, frame);
             }
         });
@@ -60,6 +61,53 @@ impl ChunkMap {
             let chunk_index = MatrixIndex { x, y };
             if self[chunk_index].is_some() {
                 self.simulate_chunk_edges(voxel_world, chunk_index, frame, &mut rand);
+                self.simulate_chunk_corners(voxel_world, chunk_index, frame, &mut rand);
+            }
+        }
+    }
+    pub fn simulate_chunk_corners(
+        &mut self,
+        voxel_world: &mut VoxelChunkMap,
+        chunk_index: MatrixIndex,
+        frame: FrameCount,
+        rand: &mut WorldRand,
+    ) {
+        for (run, x, y) in [
+            (
+                self[chunk_index - (0, 1)].is_some()
+                    && self[chunk_index - (1, 0)].is_some()
+                    && self[chunk_index - (1, 1)].is_some(),
+                0,
+                0,
+            ),
+            (
+                self[chunk_index - (0, 1)].is_some()
+                    && self[chunk_index + (1, 0)].is_some()
+                    && self[chunk_index - (0, 1) + (1, 0)].is_some(),
+                CHUNK_WIDTH_LAST,
+                0,
+            ),
+            (
+                self[chunk_index + (0, 1)].is_some()
+                    && self[chunk_index - (1, 0)].is_some()
+                    && self[chunk_index - (1, 0) + (0, 1)].is_some(),
+                0,
+                CHUNK_HEIGHT_LAST,
+            ),
+            (
+                self[chunk_index + (0, 1)].is_some()
+                    && self[chunk_index + (1, 0)].is_some()
+                    && self[chunk_index + (1, 1)].is_some(),
+                CHUNK_WIDTH_LAST,
+                CHUNK_HEIGHT_LAST,
+            ),
+        ] {
+            if run {
+                let index = FullIndex {
+                    cell_index: MatrixIndex { x, y },
+                    chunk_index,
+                };
+                self.simulate_cell(voxel_world, index, frame, rand);
             }
         }
     }
@@ -70,22 +118,34 @@ impl ChunkMap {
         frame: FrameCount,
         rand: &mut WorldRand,
     ) {
-        /*for y in (0..=(CHUNK_HEIGHT - 1).strict_cast::<ChunkIndexType>()).rev() {
-            for x in 0..=(CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() {
-                let index = FullIndex {
-                    cell_index: MatrixIndex {
-                        x: if y.is_multiple_of(2) {
-                            x
-                        } else {
-                            (CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() - x
-                        },
-                        y,
-                    },
-                    chunk_index,
-                };
-                self.simulate_cell(voxel_world, index, frame, rand);
+        for (run, y) in [
+            (self[chunk_index - (0, 1)].is_some(), 0),
+            (self[chunk_index + (0, 1)].is_some(), CHUNK_HEIGHT_LAST),
+        ] {
+            if run {
+                for x in 1..CHUNK_WIDTH_LAST {
+                    let index = FullIndex {
+                        cell_index: MatrixIndex { x, y },
+                        chunk_index,
+                    };
+                    self.simulate_cell(voxel_world, index, frame, rand);
+                }
             }
-        }*/
+        }
+        for (run, x) in [
+            (self[chunk_index - (1, 0)].is_some(), 0),
+            (self[chunk_index + (1, 0)].is_some(), CHUNK_WIDTH_LAST),
+        ] {
+            if run {
+                for y in 1..CHUNK_HEIGHT_LAST {
+                    let index = FullIndex {
+                        cell_index: MatrixIndex { x, y },
+                        chunk_index,
+                    };
+                    self.simulate_cell(voxel_world, index, frame, rand);
+                }
+            }
+        }
     }
     pub fn simulate_cell(
         &mut self,
@@ -200,6 +260,8 @@ impl ChunkMap {
         if index.chunk_index == swap_index.chunk_index {
             if let Some(chunk) = &mut self[index.chunk_index] {
                 chunk.cells.swap(index.cell_index, swap_index.cell_index);
+            } else {
+                cold_path();
             }
         } else if let [Some(from), Some(to)] = self
             .chunks
@@ -207,6 +269,8 @@ impl ChunkMap {
             .get_disjoint_mut([index.chunk_index, swap_index.chunk_index])
         {
             mem::swap(&mut from[index.cell_index], &mut to[swap_index.cell_index]);
+        } else {
+            cold_path();
         }
     }
 }
@@ -218,7 +282,7 @@ impl Chunk {
                     x: if y.is_multiple_of(2) {
                         x
                     } else {
-                        (CHUNK_WIDTH - 1).strict_cast::<ChunkIndexType>() - x
+                        CHUNK_WIDTH_LAST - x
                     },
                     y,
                 };

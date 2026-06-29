@@ -24,6 +24,10 @@ pub const CHUNK_WIDTH: usize = 256;
 pub const CHUNK_HEIGHT: usize = 256;
 pub const CHUNK_MAP_WIDTH: usize = 256;
 pub const CHUNK_MAP_HEIGHT: usize = 256;
+pub const CHUNK_WIDTH_LAST: ChunkIndexType = (CHUNK_WIDTH - 1) as ChunkIndexType;
+pub const CHUNK_HEIGHT_LAST: ChunkIndexType = (CHUNK_HEIGHT - 1) as ChunkIndexType;
+pub const CHUNK_MAP_WIDTH_LAST: ChunkIndexType = (CHUNK_MAP_WIDTH - 1) as ChunkIndexType;
+pub const CHUNK_MAP_HEIGHT_LAST: ChunkIndexType = (CHUNK_MAP_HEIGHT - 1) as ChunkIndexType;
 pub type ChunkIndexType = u8;
 #[cfg(feature = "wasm")]
 #[wasm_bindgen::prelude::wasm_bindgen(start)]

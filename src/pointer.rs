@@ -2,10 +2,11 @@ use crate::PIXEL_SCALE;
 use crate::chunk_map::{ChunkMap, FullIndex, VoxelChunkMap};
 use bevy::camera::{Camera, Camera2d};
 use bevy::input::ButtonInput;
-use bevy::prelude::{GlobalTransform, Local, MouseButton, Res, ResMut, Single, With};
+use bevy::prelude::{GlobalTransform, KeyCode, Local, MouseButton, Res, ResMut, Single, With};
 use bevy::window::Window;
 pub fn spawn_cells(
     pointer: Res<ButtonInput<MouseButton>>,
+    kb: Res<ButtonInput<KeyCode>>,
     window: Single<&Window>,
     camera_single: Single<(&Camera, &GlobalTransform), With<Camera2d>>,
     mut world: ResMut<ChunkMap>,
@@ -16,6 +17,7 @@ pub fn spawn_cells(
     let left = pointer.pressed(MouseButton::Left);
     let mid = pointer.pressed(MouseButton::Middle);
     let right = pointer.pressed(MouseButton::Right);
+    let shift = kb.pressed(KeyCode::ShiftLeft);
     if left || mid || right {
         if !*pressed
             && let Some(pos) = window
@@ -31,7 +33,7 @@ pub fn spawn_cells(
                     &mut voxel_world,
                     index,
                     if left {
-                        9
+                        if shift { 6 } else { 9 }
                     } else if mid {
                         3
                     } else {

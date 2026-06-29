@@ -1,4 +1,4 @@
-use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, ChunkIndexType};
+use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
 use avian2d::parry::math::IVector;
 use bevy::tasks::ComputeTaskPool;
 use std::array;
@@ -145,7 +145,6 @@ impl<T> Matrix<T> {
 }
 impl<T> Matrix<Option<T>> {
     pub fn get_neighbors_mut(&mut self, idx: MatrixIndex) -> [Option<&mut T>; 5] {
-        const MAX: ChunkIndexType = (CHUNK_WIDTH - 1) as ChunkIndexType;
         let mut ret = [None, None, None, None, None];
         let mut idxs = [None, None, Some(idx), None, None];
         if idx.y != 0 {
@@ -154,10 +153,10 @@ impl<T> Matrix<Option<T>> {
         if idx.x != 0 {
             idxs[1] = Some(idx - (1, 0));
         }
-        if idx.x != MAX {
+        if idx.x != CHUNK_WIDTH_LAST {
             idxs[3] = Some(idx + (1, 0));
         }
-        if idx.y != MAX {
+        if idx.y != CHUNK_WIDTH_LAST {
             idxs[4] = Some(idx + (0, 1));
         }
         let arr_ptr: *mut [Option<T>] = self.elems.as_flattened_mut();

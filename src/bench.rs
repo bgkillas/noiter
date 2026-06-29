@@ -1,8 +1,8 @@
 use crate::chunk::Chunk;
-use crate::chunk_map::{ChunkMap, ChunkMapModified, VoxelChunkMap};
+use crate::chunk_map::{ChunkMap, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
+use crate::simulate_world::WorldRand;
 use crate::world_image::write_data;
-use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::diagnostic::FrameCount;
 use test::{Bencher, black_box};
 #[bench]
@@ -29,41 +29,17 @@ fn bench_simulate(bencher: &mut Bencher) {
     let mut chunk_map = ChunkMap::default();
     let mut voxel_world = VoxelChunkMap::default();
     chunk_map.insert(&mut voxel_world, MatrixIndex::new(0, 0), Chunk::new(|_| 0));
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(1, 0), Chunk::new(|_| 0));
-    chunk_map.insert(
-        &mut voxel_world,
-        MatrixIndex::new(0, 1),
-        Chunk::new(|index| {
-            if index.x > (CHUNK_WIDTH / 2).strict_cast::<ChunkIndexType>()
-                && index.y < (CHUNK_HEIGHT / 2).strict_cast::<ChunkIndexType>()
-            {
-                1
-            } else {
-                0
-            }
-        }),
-    );
-    chunk_map.insert(
-        &mut voxel_world,
-        MatrixIndex::new(1, 1),
-        Chunk::new(|index| {
-            if index.x < (CHUNK_WIDTH / 2).strict_cast::<ChunkIndexType>()
-                && index.y < (CHUNK_HEIGHT / 2).strict_cast::<ChunkIndexType>()
-            {
-                2
-            } else {
-                0
-            }
-        }),
-    );
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(2, 0), Chunk::new(|_| 9));
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(2, 1), Chunk::new(|_| 0));
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(2, 2), Chunk::new(|_| 0));
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(0, 2), Chunk::new(|_| 0));
-    chunk_map.insert(&mut voxel_world, MatrixIndex::new(1, 2), Chunk::new(|_| 0));
     let mut i = 0;
+    let mut world_rand = WorldRand::default();
     bencher.iter(|| {
         i += 1;
-        chunk_map.simulate_edges(&mut voxel_world, FrameCount(i));
+        chunk_map[MatrixIndex::new(0, 0)]
+            .as_mut()
+            .unwrap()
+            .simulate(
+                voxel_world[MatrixIndex::new(0, 0)].as_mut().unwrap(),
+                &mut world_rand,
+                FrameCount(i),
+            );
     })
 }
