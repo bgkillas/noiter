@@ -3,8 +3,7 @@ use crate::chunk::{Chunk, VoxelChunk};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use crate::{CHUNK_HEIGHT, CHUNK_HEIGHT_LAST, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
-use bevy::diagnostic::FrameCount;
-use bevy::prelude::{Res, ResMut};
+use bevy::prelude::{Local, ResMut};
 use rand::distr::{Bernoulli, Uniform};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
@@ -14,11 +13,12 @@ pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
     mut voxel_world: ResMut<VoxelChunkMap>,
     mut modified: ResMut<ChunkMapModified>,
-    frame: Res<FrameCount>,
+    mut simulate: Local<u8>,
 ) {
     modified.visual_modified = true;
-    world.simulate(&mut voxel_world, *frame);
-    world.simulate_edges(&mut voxel_world, *frame);
+    world.simulate(&mut voxel_world, *simulate);
+    world.simulate_edges(&mut voxel_world, *simulate);
+    *simulate = simulate.wrapping_add(1);
 }
 pub struct WorldRand {
     rng: SmallRng,
@@ -43,7 +43,7 @@ impl WorldRand {
     }
 }
 impl ChunkMap {
-    pub fn simulate(&mut self, voxel_world: &mut VoxelChunkMap, frame: FrameCount) {
+    pub fn simulate(&mut self, voxel_world: &mut VoxelChunkMap, frame: u8) {
         self.par_iter_zip_mut(voxel_world, |iter| {
             let mut rand = WorldRand::default();
             for (_, chunk, voxel_chunk) in iter {
@@ -51,7 +51,7 @@ impl ChunkMap {
             }
         });
     }
-    pub fn simulate_edges(&mut self, voxel_world: &mut VoxelChunkMap, frame: FrameCount) {
+    pub fn simulate_edges(&mut self, voxel_world: &mut VoxelChunkMap, frame: u8) {
         let mut rand = WorldRand::default();
         let min_x = self.chunks.min_elem.x;
         let max_x = self.chunks.max_elem.x;
@@ -69,7 +69,7 @@ impl ChunkMap {
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         chunk_index: MatrixIndex,
-        frame: FrameCount,
+        frame: u8,
         rand: &mut WorldRand,
     ) {
         for (run, x, y) in [
@@ -115,7 +115,7 @@ impl ChunkMap {
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         chunk_index: MatrixIndex,
-        frame: FrameCount,
+        frame: u8,
         rand: &mut WorldRand,
     ) {
         for (run, y) in [
@@ -151,7 +151,7 @@ impl ChunkMap {
         &mut self,
         voxel_world: &mut VoxelChunkMap,
         index: FullIndex,
-        frame: FrameCount,
+        frame: u8,
         rand: &mut WorldRand,
     ) {
         let Some(cell) = self.get_mut(index) else {
@@ -275,7 +275,7 @@ impl ChunkMap {
     }
 }
 impl Chunk {
-    pub fn simulate(&mut self, voxel: &mut VoxelChunk, rand: &mut WorldRand, frame: FrameCount) {
+    pub fn simulate(&mut self, voxel: &mut VoxelChunk, rand: &mut WorldRand, frame: u8) {
         for y in (1..=(CHUNK_HEIGHT - 2).strict_cast::<ChunkIndexType>()).rev() {
             for x in 1..=(CHUNK_WIDTH - 2).strict_cast::<ChunkIndexType>() {
                 let index = MatrixIndex {
@@ -295,7 +295,7 @@ impl Chunk {
         voxel: &mut VoxelChunk,
         index: MatrixIndex,
         rand: &mut WorldRand,
-        frame: FrameCount,
+        frame: u8,
     ) {
         if self[index].last_changed == frame {
             return;

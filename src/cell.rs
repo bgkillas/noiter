@@ -1,5 +1,4 @@
 use crate::cells::CELLS;
-use bevy::diagnostic::FrameCount;
 use std::{mem, ptr};
 #[derive(Debug)]
 pub struct CellData {
@@ -87,7 +86,7 @@ pub struct Cell {
     pub color: CellColor,
     pub cell_data: &'static CellData,
     pub cell_type: CellType,
-    pub last_changed: FrameCount,
+    pub last_changed: u8,
 }
 impl Cell {
     #[must_use]
@@ -97,7 +96,7 @@ impl Cell {
             color: cell_data.color,
             cell_data,
             cell_type: cell_data.type_data.cell_type(),
-            last_changed: FrameCount(0),
+            last_changed: 0,
         }
     }
     #[must_use]
