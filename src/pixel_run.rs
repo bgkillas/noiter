@@ -57,21 +57,20 @@ impl<T, const N: usize> Array<T, N> {
         unsafe { &*(ptr::from_ref(&self.arr[..self.len]) as *const [T]) }
     }
 }
-#[derive(Default)]
-pub struct PixelRun {
-    pub arr: Array<(u16, CellId), CHUNK_AREA>,
+pub struct PixelRun<'a> {
+    pub arr: &'a [(u16, CellId)],
 }
-impl PixelRun {
+impl<'a> PixelRun<'a> {
     #[must_use]
-    pub fn iter(&self) -> PixelRunIter<'_> {
+    pub fn iter(self) -> PixelRunIter<'a> {
         PixelRunIter {
-            arr: self.arr.slice(),
+            arr: self.arr,
             current: self.arr[0].0,
             pixel: self.arr[0].1,
         }
     }
 }
-impl<'a> IntoIterator for &'a PixelRun {
+impl<'a> IntoIterator for PixelRun<'a> {
     type Item = CellId;
     type IntoIter = PixelRunIter<'a>;
     fn into_iter(self) -> Self::IntoIter {
@@ -80,19 +79,25 @@ impl<'a> IntoIterator for &'a PixelRun {
 }
 #[derive(Default)]
 pub struct PixelRunBuilder {
-    pub inner: PixelRun,
+    pub inner: Array<(u16, CellId), CHUNK_AREA>,
     pub current: CellId,
     pub len: u16,
 }
 impl PixelRunBuilder {
     #[must_use]
-    pub fn build(mut self) -> PixelRun {
+    pub fn build(&mut self) -> PixelRun<'_> {
         self.write();
-        self.inner
+        self.pixel_run()
+    }
+    #[must_use]
+    pub fn pixel_run(&self) -> PixelRun<'_> {
+        PixelRun {
+            arr: self.inner.slice(),
+        }
     }
     pub fn write(&mut self) {
         if self.len != 0 {
-            self.inner.arr.push((self.len, self.current));
+            self.inner.push((self.len, self.current));
             self.current = 0;
             self.len = 0;
         }
@@ -109,7 +114,7 @@ impl PixelRunBuilder {
     pub fn clear(&mut self) {
         self.len = 0;
         self.current = 0;
-        self.inner.arr.clear();
+        self.inner.clear();
     }
     #[unsafe(no_mangle)]
     pub fn write_chunk(&mut self, chunk: &Chunk) {
