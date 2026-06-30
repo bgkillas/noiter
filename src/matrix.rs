@@ -101,10 +101,10 @@ impl<T> Matrix<T> {
         }
     }
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.elems.iter().flat_map(|elems| elems.iter())
+        self.elems.as_flattened().iter()
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
-        self.elems.iter_mut().flat_map(|elems| elems.iter_mut())
+        self.elems.as_flattened_mut().iter_mut()
     }
     pub fn iter_enumerate(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
         self.elems

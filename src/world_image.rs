@@ -5,8 +5,8 @@ use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
 use bevy::prelude::{
-    Component, Deref, DerefMut, Local, MessageReader, Res, ResMut, Resource, Single, Transform,
-    With, Without,
+    Component, Deref, DerefMut, Local, PopulatedMessageReader, Res, ResMut, Resource, Single,
+    Transform, With, Without,
 };
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::window::WindowResized;
@@ -70,7 +70,7 @@ pub(crate) fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: 
     }
 }
 pub fn on_resize_world(
-    mut resize_reader: MessageReader<WindowResized>,
+    mut resize_reader: PopulatedMessageReader<WindowResized>,
     world_image_handle: Res<WorldImageHandle>,
     mut images: ResMut<Assets<Image>>,
     mut world_image: Single<&mut WorldImage>,

@@ -1,8 +1,9 @@
 use crate::cells::CELLS;
 use std::{mem, ptr};
+pub type CellId = u16;
 #[derive(Debug)]
 pub struct CellData {
-    pub id: usize,
+    pub id: CellId,
     pub color: CellColor,
     pub name: &'static str,
     pub type_data: CellDataType,
@@ -85,6 +86,7 @@ impl CellColor {
 pub struct Cell {
     pub color: CellColor,
     pub cell_data: &'static CellData,
+    pub id: CellId,
     pub cell_type: CellType,
     pub last_changed: u8,
 }
@@ -95,6 +97,7 @@ impl Cell {
         Self {
             color: cell_data.color,
             cell_data,
+            id: cell_data.id,
             cell_type: cell_data.type_data.cell_type(),
             last_changed: 0,
         }

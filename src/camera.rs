@@ -5,11 +5,11 @@ use bevy::asset::Assets;
 use bevy::camera::{Camera2d, Projection};
 use bevy::image::Image;
 use bevy::input::ButtonInput;
-use bevy::prelude::{KeyCode, MessageReader, Res, ResMut, Single, Transform, With};
+use bevy::prelude::{KeyCode, PopulatedMessageReader, Res, ResMut, Single, Transform, With};
 use bevy::window::{Window, WindowResized};
 pub fn align_camera(
     mut camera: Single<&mut Transform, With<Camera2d>>,
-    mut resize_reader: MessageReader<WindowResized>,
+    mut resize_reader: PopulatedMessageReader<WindowResized>,
 ) {
     if let Some(size) = resize_reader.read().last() {
         let width = size.width / 2.0;

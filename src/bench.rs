@@ -1,6 +1,7 @@
 use crate::chunk::Chunk;
 use crate::chunk_map::{ChunkMap, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
+use crate::pixel_run::PixelRunBuilder;
 use crate::simulate_world::WorldRand;
 use crate::world_image::write_data;
 use test::{Bencher, black_box};
@@ -41,4 +42,23 @@ fn bench_simulate(bencher: &mut Bencher) {
             );
         i = i.wrapping_add(1);
     })
+}
+#[bench]
+fn bench_pixel_run(bencher: &mut Bencher) {
+    let mut chunk_map = ChunkMap::default();
+    let mut voxel_world = VoxelChunkMap::default();
+    let mut world_rand = WorldRand::default();
+    chunk_map.insert(
+        &mut voxel_world,
+        MatrixIndex::new(0, 0),
+        Chunk::new(|_| if world_rand.half() { 1 } else { 0 }),
+    );
+    let mut pixel_run = PixelRunBuilder::default();
+    bencher.iter(|| {
+        let chunk = chunk_map[MatrixIndex::new(0, 0)].as_ref().unwrap();
+        pixel_run.write_chunk(&chunk);
+        pixel_run.write();
+        black_box(&pixel_run);
+        pixel_run.clear();
+    });
 }
