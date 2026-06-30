@@ -54,10 +54,15 @@ fn bench_pixel_run(bencher: &mut Bencher) {
         Chunk::new(|_| if world_rand.half() { 1 } else { 0 }),
     );
     let mut pixel_run = PixelRunBuilder::default();
+    let chunk = chunk_map[MatrixIndex::new(0, 0)].as_ref().unwrap();
+    pixel_run.write_chunk(&chunk);
+    pixel_run.finish();
+    assert_eq!(pixel_run.pixel_run().iter().count(), 65536);
+    pixel_run.clear();
     bencher.iter(|| {
         let chunk = chunk_map[MatrixIndex::new(0, 0)].as_ref().unwrap();
         pixel_run.write_chunk(&chunk);
-        pixel_run.write();
+        pixel_run.finish();
         black_box(&pixel_run);
         pixel_run.clear();
     });

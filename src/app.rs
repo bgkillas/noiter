@@ -1,4 +1,3 @@
-use crate::PIXEL_LENGTH;
 use crate::camera::{align_camera, move_camera, zoom_camera};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, VoxelChunkMap};
 use crate::collider_world::update_colliders;
@@ -7,6 +6,7 @@ use crate::pointer::spawn_cells;
 use crate::simulate_world::simulate_world;
 use crate::startup::startup;
 use crate::world_image::{PixelLength, display_world, on_resize_world};
+use crate::{APP_NAME, PIXEL_LENGTH};
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
 use bevy::app::{App, AppExit, FixedUpdate, PluginGroup as _, Startup, Update};
@@ -39,7 +39,7 @@ pub fn app_run() -> AppExit {
             })
             .set(ImagePlugin::default_nearest()),
         PhysicsPlugins::default(),
-        SettingsPlugin::new("com.github.bgkillas.noiter"),
+        SettingsPlugin::new(APP_NAME),
         #[cfg(feature = "colliders")]
         avian2d::debug_render::PhysicsDebugPlugin,
         #[cfg(feature = "fps")]

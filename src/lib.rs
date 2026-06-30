@@ -21,6 +21,7 @@ pub mod uninit_cell_map;
 pub mod world_image;
 #[cfg(test)]
 extern crate test;
+pub const APP_NAME: &str = "com.github.bgkillas.noiter";
 pub const PIXEL_SCALE: f32 = 1.0;
 pub const PIXEL_LENGTH: u32 = 4;
 pub const CHUNK_WIDTH: usize = 256;

@@ -3,7 +3,6 @@ use std::{mem, ptr};
 pub type CellId = u16;
 #[derive(Debug)]
 pub struct CellData {
-    pub id: CellId,
     pub color: CellColor,
     pub name: &'static str,
     pub type_data: CellDataType,
@@ -92,12 +91,12 @@ pub struct Cell {
 }
 impl Cell {
     #[must_use]
-    pub fn new(id: usize) -> Self {
-        let cell_data = &CELLS[id];
+    pub fn new(id: CellId) -> Self {
+        let cell_data = &CELLS[id.strict_cast::<usize>()];
         Self {
             color: cell_data.color,
             cell_data,
-            id: cell_data.id,
+            id,
             cell_type: cell_data.type_data.cell_type(),
             last_changed: 0,
         }
@@ -117,7 +116,7 @@ impl Cell {
             CellType::Liquid | CellType::Gas | CellType::Air
         ) && !ptr::eq(self.cell_data, other.cell_data)
     }
-    pub fn into(&mut self, id: usize) {
+    pub fn into(&mut self, id: CellId) {
         *self = Cell::new(id);
     }
 }

@@ -1,4 +1,4 @@
-use crate::cell::Cell;
+use crate::cell::{Cell, CellId};
 use crate::chunk::{Chunk, VoxelChunk};
 use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
@@ -110,7 +110,7 @@ impl ChunkMap {
             self.insert(voxel_chunk_map, index, Chunk::new(|_| 0));
         }
     }
-    pub fn set(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: FullIndex, id: usize) {
+    pub fn set(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: FullIndex, id: CellId) {
         if let Some(cell) = self.get_mut(index) {
             let old = cell.is_collider();
             cell.into(id);

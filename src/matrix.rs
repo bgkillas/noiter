@@ -2,6 +2,7 @@ use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, CHUNK_WIDTH_LAST, Ch
 use avian2d::parry::math::IVector;
 use bevy::tasks::ComputeTaskPool;
 use std::array;
+use std::cmp::Ordering;
 use std::hint::assert_unchecked;
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
@@ -32,6 +33,17 @@ pub struct MatrixIndex {
 pub struct MatrixIndex {
     pub x: ChunkIndexType,
     pub y: ChunkIndexType,
+}
+impl Eq for MatrixIndex {}
+impl PartialOrd for MatrixIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for MatrixIndex {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.flatten().cmp(&other.flatten())
+    }
 }
 impl From<MatrixIndex> for IVector {
     fn from(value: MatrixIndex) -> Self {
@@ -328,6 +340,28 @@ impl<T> MatrixBounded<T> {
             phantom: PhantomData,
         }
         .filter_map(|(i, ch)| ch.as_mut().map(|c| (i, c)))
+    }
+    pub fn iter_opt(&self) -> impl Iterator<Item = (MatrixIndex, &Option<T>)> {
+        (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
+            (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {
+                let idx = MatrixIndex { x, y };
+                if self.matrix[idx].is_some() {
+                    Some((idx, &self.matrix[idx]))
+                } else {
+                    None
+                }
+            })
+        })
+    }
+    pub fn iter_opt_mut(&mut self) -> impl Iterator<Item = (MatrixIndex, &mut Option<T>)> {
+        MatrixBoundedIterMut {
+            min_elem_x: self.min_elem.x,
+            min_elem: self.min_elem,
+            max_elem: self.max_elem,
+            matrix: NonNull::new(&raw mut self.matrix).unwrap(),
+            phantom: PhantomData,
+        }
+        .filter(|(_, ch)| ch.is_some())
     }
 }
 pub struct MatrixBoundedIterMut<'a, T> {

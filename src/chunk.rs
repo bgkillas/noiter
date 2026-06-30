@@ -1,4 +1,4 @@
-use crate::cell::Cell;
+use crate::cell::{Cell, CellId};
 use crate::matrix::{Matrix, MatrixIndex};
 use crate::{CHUNK_MAP_HEIGHT, PIXEL_SCALE};
 use avian2d::math::Vector;
@@ -17,7 +17,7 @@ pub struct VoxelChunk {
     pub voxels: usize,
 }
 impl Chunk {
-    pub fn new(mut f: impl FnMut(MatrixIndex) -> usize) -> (Self, VoxelChunk) {
+    pub fn new(mut f: impl FnMut(MatrixIndex) -> CellId) -> (Self, VoxelChunk) {
         let mut cells = Box::<Matrix<Cell>>::new_uninit();
         let mut shape = SharedShape::new(Voxels::new(Vector::splat(PIXEL_SCALE), &[]));
         let voxel = shape.make_mut().as_voxels_mut().unwrap();

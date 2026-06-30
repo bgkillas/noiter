@@ -1,15 +1,19 @@
+use crate::load_chunks::WORLD_FOLDER;
 use crate::world_image::{WorldImage, WorldImageHandle};
 use crate::{
-    CHUNK_HEIGHT, CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, PIXEL_LENGTH, PIXEL_SCALE,
+    APP_NAME, CHUNK_HEIGHT, CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, PIXEL_LENGTH,
+    PIXEL_SCALE,
 };
 use bevy::asset::{Assets, RenderAssetUsages};
 use bevy::camera::{Camera2d, OrthographicProjection, Projection};
 use bevy::ecs::system::Commands;
 use bevy::image::Image;
 use bevy::math::Vec3;
+use bevy::platform::dirs::preferences_dir;
 use bevy::prelude::{ResMut, Transform};
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite::Sprite;
+use std::fs;
 pub fn startup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let x = PIXEL_SCALE * (CHUNK_WIDTH * CHUNK_MAP_WIDTH / 2) as f32;
     let y = PIXEL_SCALE * (CHUNK_HEIGHT * CHUNK_MAP_HEIGHT / 2) as f32;
@@ -38,4 +42,10 @@ pub fn startup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(PIXEL_SCALE)),
     ));
     commands.insert_resource(WorldImageHandle(handle));
+    let Some(pref) = preferences_dir() else {
+        return;
+    };
+    let folder_name = pref.join(APP_NAME).join(WORLD_FOLDER);
+    let _ = fs::remove_dir_all(&folder_name);
+    let _ = fs::create_dir_all(folder_name);
 }
