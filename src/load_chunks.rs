@@ -7,6 +7,9 @@ use crate::{APP_NAME, CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType, PIXEL_SCALE};
 use bevy::camera::Camera2d;
 use bevy::platform::dirs::preferences_dir;
 use bevy::prelude::{Commands, ResMut, Single, Transform, With};
+use rand::distr::Uniform;
+use rand::rngs::SmallRng;
+use rand::{RngExt as _, make_rng};
 use std::fs;
 use std::fs::OpenOptions;
 pub const WORLD_FOLDER: &str = "world";
@@ -31,10 +34,10 @@ pub fn load_chunks(
     let max_x = px + world_image.width;
     let max_y = py + world_image.width;
     let min_cx = (min_x as usize / CHUNK_WIDTH).strict_cast::<ChunkIndexType>();
-    let min_cy = (min_y as usize)
-        .div_ceil(CHUNK_HEIGHT)
+    let min_cy = (min_y as usize / CHUNK_HEIGHT).strict_cast::<ChunkIndexType>();
+    let max_cx = (max_x as usize)
+        .div_ceil(CHUNK_WIDTH)
         .strict_cast::<ChunkIndexType>();
-    let max_cx = (max_x as usize / CHUNK_WIDTH).strict_cast::<ChunkIndexType>();
     let max_cy = (max_y as usize)
         .div_ceil(CHUNK_HEIGHT)
         .strict_cast::<ChunkIndexType>();
@@ -59,6 +62,8 @@ pub fn load_chunks(
             pixel_run.clear();
         }
     }
+    let mut small_rng: SmallRng = make_rng();
+    let uniform = Uniform::new(2, 5).unwrap();
     for y in min_cy..=max_cy {
         for x in min_cx..=max_cx {
             let i = MatrixIndex { x, y };
@@ -76,7 +81,11 @@ pub fn load_chunks(
                 pixel_run.clear();
                 continue;
             }
-            world.insert(&mut voxel_world, i, Chunk::new(|_| 0));
+            world.insert(
+                &mut voxel_world,
+                i,
+                Chunk::new(|_| small_rng.sample(uniform)),
+            );
         }
     }
 }
