@@ -3,7 +3,8 @@ use crate::chunk::{Chunk, VoxelChunk};
 use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex, VoxelChunkMap};
 use crate::matrix::MatrixIndex;
 use crate::{CHUNK_HEIGHT, CHUNK_HEIGHT_LAST, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
-use bevy::prelude::{Local, ResMut};
+use bevy::diagnostic::FrameCount;
+use bevy::prelude::{Local, Res, ResMut};
 use rand::distr::{Bernoulli, Uniform};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
@@ -14,7 +15,13 @@ pub fn simulate_world(
     mut voxel_world: ResMut<VoxelChunkMap>,
     mut modified: ResMut<ChunkMapModified>,
     mut simulate: Local<u8>,
+    frame: Res<FrameCount>,
+    mut last: Local<FrameCount>,
 ) {
+    if *last == *frame {
+        return;
+    }
+    *last = *frame;
     modified.visual_modified = true;
     world.simulate(&mut voxel_world, *simulate);
     world.simulate_edges(&mut voxel_world, *simulate);
