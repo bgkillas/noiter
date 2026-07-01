@@ -42,10 +42,10 @@ pub fn load_chunks(
         .div_ceil(CHUNK_HEIGHT)
         .strict_cast::<ChunkIndexType>();
     let mut pixel_run = PixelRunBuilder::default();
-    for (i, c) in world.iter_opt_mut() {
-        if i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy {
-            let chunk = c.take().unwrap();
-            let voxel = voxel_world[i].take().unwrap();
+    world.take_if(
+        |i| i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy,
+        |i, chunk| {
+            let voxel = voxel_world.remove(i);
             if let Some(ent) = voxel.collider {
                 commands.entity(ent).despawn();
             }
@@ -60,8 +60,8 @@ pub fn load_chunks(
                 .unwrap();
             pixel_run.write(file);
             pixel_run.clear();
-        }
-    }
+        },
+    );
     let mut small_rng: SmallRng = make_rng();
     let uniform = Uniform::new(2, 5).unwrap();
     for y in min_cy..=max_cy {

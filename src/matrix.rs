@@ -227,8 +227,8 @@ impl<T> Default for MatrixBounded<T> {
     }
 }
 impl<T> MatrixBounded<T> {
-    pub fn remove(&mut self, index: MatrixIndex) {
-        if self.matrix[index].take().is_some() {
+    pub fn remove(&mut self, index: MatrixIndex) -> T {
+        if let Some(r) = self.matrix[index].take() {
             let min_x = self.min_elem.x;
             let max_x = self.max_elem.x;
             let min_y = self.min_elem.y;
@@ -249,6 +249,7 @@ impl<T> MatrixBounded<T> {
                     }
                 }
             }
+            r
         } else {
             unreachable!()
         }
@@ -362,6 +363,20 @@ impl<T> MatrixBounded<T> {
             phantom: PhantomData,
         }
         .filter(|(_, ch)| ch.is_some())
+    }
+    pub fn take_if(
+        &mut self,
+        cond: impl Fn(MatrixIndex) -> bool,
+        mut f: impl FnMut(MatrixIndex, T),
+    ) {
+        for y in self.min_elem.y..=self.max_elem.y {
+            for x in self.min_elem.x..=self.max_elem.x {
+                let idx = MatrixIndex { x, y };
+                if cond(idx) {
+                    f(idx, self.remove(idx));
+                }
+            }
+        }
     }
 }
 pub struct MatrixBoundedIterMut<'a, T> {
