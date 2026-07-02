@@ -40,71 +40,60 @@ pub fn load_chunks(
     let max_cy = (max_y as usize)
         .div_ceil(CHUNK_HEIGHT)
         .strict_cast::<ChunkIndexType>();
-    for ent in world
-        .par_take_zip_if(
-            &mut voxel_world,
-            |i| i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy,
-            |iter| {
-                let mut pixel_run = PixelRunBuilder::default();
-                let mut ret = Vec::with_capacity(iter.len());
-                for (i, chunk, voxel) in iter {
-                    if let Some(ent) = voxel.collider {
-                        ret.push(ent);
-                    }
-                    pixel_run.write_chunk(chunk);
-                    pixel_run.finish();
-                    let file_name = folder_name.join(format!("{}x{}", i.x, i.y));
-                    let file = OpenOptions::new()
-                        .write(true)
-                        .create(true)
-                        .truncate(true)
-                        .open(file_name)
-                        .unwrap();
-                    pixel_run.write(file);
-                    pixel_run.clear();
-                }
-                ret
-            },
-        )
-        .into_iter()
-        .flatten()
-    {
-        commands.entity(ent).despawn();
-    }
-    let uniform = Uniform::new(2, 5).unwrap();
-    for (idx, chunk) in world
-        .par_iter_none_in_range(min_cx, min_cy, max_cx, max_cy, |iter| {
-            let mut small_rng: SmallRng = make_rng();
+    world.par_take_zip_if(
+        &mut voxel_world,
+        &mut commands,
+        |i| i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy,
+        |iter| {
             let mut pixel_run = PixelRunBuilder::default();
-            let mut vec = Vec::with_capacity(iter.len());
-            for idx in iter.iter().copied() {
-                if let Ok(file) = OpenOptions::new()
-                    .read(true)
-                    .create(false)
-                    .open(folder_name.join(format!("{}x{}", idx.x, idx.y)))
-                {
-                    pixel_run.read(file);
-                    let mut iter = pixel_run.pixel_run().iter();
-                    vec.push((idx, Chunk::new(|_| iter.next().unwrap())));
-                    pixel_run.clear();
-                } else {
-                    vec.push((
-                        idx,
-                        Chunk::new(|_| {
-                            if small_rng.random_bool(0.8) {
-                                0
-                            } else {
-                                small_rng.sample(uniform)
-                            }
-                        }),
-                    ));
+            let mut ret = Vec::with_capacity(iter.len());
+            for (i, chunk, voxel) in iter {
+                if let Some(ent) = voxel.collider {
+                    ret.push(ent);
                 }
+                pixel_run.write_chunk(chunk);
+                pixel_run.finish();
+                let file_name = folder_name.join(format!("{}x{}", i.x, i.y));
+                let file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(file_name)
+                    .unwrap();
+                pixel_run.write(file);
+                pixel_run.clear();
             }
-            vec
-        })
-        .into_iter()
-        .flatten()
-    {
-        world.insert(&mut voxel_world, idx, chunk);
-    }
+            ret
+        },
+    );
+    let uniform = Uniform::new(2, 5).unwrap();
+    world.par_iter_none_in_range(&mut voxel_world, min_cx, min_cy, max_cx, max_cy, |iter| {
+        let mut small_rng: SmallRng = make_rng();
+        let mut pixel_run = PixelRunBuilder::default();
+        let mut vec = Vec::with_capacity(iter.len());
+        for idx in iter.iter().copied() {
+            if let Ok(file) = OpenOptions::new()
+                .read(true)
+                .create(false)
+                .open(folder_name.join(format!("{}x{}", idx.x, idx.y)))
+            {
+                pixel_run.read(file);
+                let mut iter = pixel_run.pixel_run().iter();
+                vec.push((idx, Chunk::new(|_| iter.next().unwrap())));
+                pixel_run.clear();
+            } else {
+                vec.push((
+                    idx,
+                    Chunk::new(|_| {
+                        if small_rng.random_bool(0.8) {
+                            0
+                        } else {
+                            small_rng.sample(uniform)
+                        }
+                    }),
+                ));
+            }
+        }
+        vec
+    });
 }

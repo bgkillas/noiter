@@ -66,7 +66,7 @@ impl<'a> PixelRun<'a> {
     #[must_use]
     pub fn iter(self) -> PixelRunIter<'a> {
         PixelRunIter {
-            arr: self.arr,
+            arr: &self.arr[1..],
             current: self.arr[0][0],
             pixel: self.arr[0][1],
             next: false,
@@ -169,12 +169,12 @@ impl Iterator for PixelRunIter<'_> {
     type Item = CellId;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next {
-            self.arr = &self.arr[1..];
             if self.arr.is_empty() {
                 return None;
             }
             self.current = self.arr[0][0];
             self.pixel = self.arr[0][1];
+            self.arr = &self.arr[1..];
             self.next = false;
         }
         if self.current == 0 {

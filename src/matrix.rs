@@ -1,6 +1,7 @@
 use crate::chunk::{Chunk, VoxelChunk};
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
 use avian2d::parry::math::IVector;
+use bevy::prelude::{Commands, Entity};
 use bevy::tasks::ComputeTaskPool;
 use std::cmp::Ordering;
 use std::hint::assert_unchecked;
@@ -339,13 +340,13 @@ impl<T> MatrixBounded<T> {
             }
         })
     }
-    pub fn par_take_zip_if<R: Send + 'static, K: Send>(
+    pub fn par_take_zip_if<K: Send>(
         &mut self,
         other: &mut MatrixBounded<K>,
+        commands: &mut Commands,
         cond: impl Fn(MatrixIndex) -> bool,
-        f: impl Fn(&mut [(MatrixIndex, T, K)]) -> R + Send + Sync,
-    ) -> Vec<R>
-    where
+        f: impl Fn(&mut [(MatrixIndex, T, K)]) -> Vec<Entity> + Send + Sync,
+    ) where
         T: Send,
     {
         let task_pool = ComputeTaskPool::get();
@@ -360,24 +361,29 @@ impl<T> MatrixBounded<T> {
                 }
             }
         }
-        if list.is_empty() {
-            Vec::new()
-        } else {
-            task_pool.scope(|scope| {
+        if !list.is_empty() {
+            for chunk in task_pool.scope(|scope| {
                 for chunk in list.chunks_mut(chunk_size) {
                     scope.spawn(async move { f_ref(chunk) });
                 }
-            })
+            }) {
+                for ent in chunk {
+                    commands.entity(ent).despawn();
+                }
+            }
         }
     }
-    pub fn par_iter_none_in_range<R: Send + 'static>(
+    pub fn par_iter_none_in_range<K: Send + Sync + 'static>(
         &mut self,
+        other: &mut MatrixBounded<K>,
         min_cx: ChunkIndexType,
         min_cy: ChunkIndexType,
         max_cx: ChunkIndexType,
         max_cy: ChunkIndexType,
-        f: impl Fn(&[MatrixIndex]) -> R + Send + Sync,
-    ) -> Vec<R> {
+        f: impl Fn(&[MatrixIndex]) -> Vec<(MatrixIndex, (T, K))> + Send + Sync,
+    ) where
+        T: Send + Sync + 'static,
+    {
         let task_pool = ComputeTaskPool::get();
         let chunk_size = (self.len / task_pool.thread_num()).max(1);
         let f_ref = &f;
@@ -393,14 +399,17 @@ impl<T> MatrixBounded<T> {
                 }
             }
         }
-        if list.is_empty() {
-            Vec::new()
-        } else {
-            task_pool.scope(|scope| {
+        if !list.is_empty() {
+            for chunk in task_pool.scope(|scope| {
                 for chunk in list.chunks_mut(chunk_size) {
                     scope.spawn(async move { f_ref(chunk) });
                 }
-            })
+            }) {
+                for (idx, (chunk, voxel)) in chunk {
+                    self.insert(idx, chunk);
+                    other.insert(idx, voxel);
+                }
+            }
         }
     }
     pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
