@@ -26,6 +26,7 @@ pub fn simulate_world(
     *last = *frame;
     modified.visual_modified = true;
     world.simulate(&mut voxel_world, *simulate);
+    //TODO can parralelize each edge seperately
     world.simulate_edges(&mut voxel_world, *simulate);
     *simulate = simulate.wrapping_add(1);
 }

@@ -339,6 +339,37 @@ impl<T> MatrixBounded<T> {
             }
         })
     }
+    pub fn par_take_zip_if<R: Send + 'static, K: Send>(
+        &mut self,
+        other: &mut MatrixBounded<K>,
+        cond: impl Fn(MatrixIndex) -> bool,
+        f: impl Fn(&mut [(MatrixIndex, T, K)]) -> R + Send + Sync,
+    ) -> Vec<R>
+    where
+        T: Send,
+    {
+        let task_pool = ComputeTaskPool::get();
+        let chunk_size = (self.len / task_pool.thread_num()).max(1);
+        let f_ref = &f;
+        let mut list = Vec::with_capacity(self.len);
+        for y in self.min_elem.y..=self.max_elem.y {
+            for x in self.min_elem.x..=self.max_elem.x {
+                let idx = MatrixIndex { x, y };
+                if cond(idx) {
+                    list.push((idx, self.remove(idx), other.remove(idx)));
+                }
+            }
+        }
+        if list.is_empty() {
+            Vec::new()
+        } else {
+            task_pool.scope(|scope| {
+                for chunk in list.chunks_mut(chunk_size) {
+                    scope.spawn(async move { f_ref(chunk) });
+                }
+            })
+        }
+    }
     pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
         (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
             (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {

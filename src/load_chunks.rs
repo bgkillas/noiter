@@ -41,29 +41,41 @@ pub fn load_chunks(
     let max_cy = (max_y as usize)
         .div_ceil(CHUNK_HEIGHT)
         .strict_cast::<ChunkIndexType>();
-    let mut pixel_run = PixelRunBuilder::default();
-    world.take_if(
-        |i| i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy,
-        |i, chunk| {
-            let voxel = voxel_world.remove(i);
-            if let Some(ent) = voxel.collider {
-                commands.entity(ent).despawn();
-            }
-            pixel_run.write_chunk(&chunk);
-            pixel_run.finish();
-            let file_name = folder_name.join(format!("{}x{}", i.x, i.y));
-            let file = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .open(file_name)
-                .unwrap();
-            pixel_run.write(file);
-            pixel_run.clear();
-        },
-    );
+    for ent in world
+        .par_take_zip_if(
+            &mut voxel_world,
+            |i| i.x < min_cx || i.y < min_cy || i.x > max_cx || i.y > max_cy,
+            |iter| {
+                let mut pixel_run = PixelRunBuilder::default();
+                let mut ret = Vec::with_capacity(iter.len());
+                for (i, chunk, voxel) in iter {
+                    if let Some(ent) = voxel.collider {
+                        ret.push(ent);
+                    }
+                    pixel_run.write_chunk(chunk);
+                    pixel_run.finish();
+                    let file_name = folder_name.join(format!("{}x{}", i.x, i.y));
+                    let file = OpenOptions::new()
+                        .write(true)
+                        .create(true)
+                        .truncate(true)
+                        .open(file_name)
+                        .unwrap();
+                    pixel_run.write(file);
+                    pixel_run.clear();
+                }
+                ret
+            },
+        )
+        .iter()
+        .flatten()
+        .copied()
+    {
+        commands.entity(ent).despawn();
+    }
     let mut small_rng: SmallRng = make_rng();
     let uniform = Uniform::new(2, 5).unwrap();
+    let mut pixel_run = PixelRunBuilder::default();
     for y in min_cy..=max_cy {
         for x in min_cx..=max_cx {
             let i = MatrixIndex { x, y };
@@ -84,7 +96,13 @@ pub fn load_chunks(
             world.insert(
                 &mut voxel_world,
                 i,
-                Chunk::new(|_| small_rng.sample(uniform)),
+                Chunk::new(|_| {
+                    if small_rng.random_bool(0.8) {
+                        0
+                    } else {
+                        small_rng.sample(uniform)
+                    }
+                }),
             );
         }
     }
