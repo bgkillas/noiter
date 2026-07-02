@@ -8,6 +8,8 @@ use std::ops::{Index, IndexMut};
 #[derive(Clone)]
 pub struct Chunk {
     pub cells: Box<Matrix<Cell>>,
+    pub skip_simulation: bool,
+    pub skip_edge_simulation: bool,
 }
 #[derive(Clone)]
 pub struct VoxelChunk {
@@ -38,6 +40,8 @@ impl Chunk {
             (
                 Self {
                     cells: cells.assume_init(),
+                    skip_simulation: false,
+                    skip_edge_simulation: false,
                 },
                 VoxelChunk {
                     voxels_modified: true,

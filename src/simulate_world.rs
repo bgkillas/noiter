@@ -10,6 +10,8 @@ use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
 use std::hint::cold_path;
 use std::mem;
+use std::time::Instant;
+const TIME_PER_CHUNK: u128 = 2048;
 pub fn simulate_world(
     mut world: ResMut<ChunkMap>,
     mut voxel_world: ResMut<VoxelChunkMap>,
@@ -28,9 +30,9 @@ pub fn simulate_world(
     *simulate = simulate.wrapping_add(1);
 }
 pub struct WorldRand {
-    rng: SmallRng,
-    half: Bernoulli,
-    gas: Uniform<usize>,
+    pub rng: SmallRng,
+    pub half: Bernoulli,
+    pub gas: Uniform<usize>,
 }
 impl Default for WorldRand {
     fn default() -> Self {
@@ -52,9 +54,24 @@ impl WorldRand {
 impl ChunkMap {
     pub fn simulate(&mut self, voxel_world: &mut VoxelChunkMap, frame: u8) {
         self.par_iter_zip_mut(voxel_world, |iter| {
+            let tmr = Instant::now();
             let mut rand = WorldRand::default();
-            for (_, chunk, voxel_chunk) in iter {
-                chunk.simulate(voxel_chunk, &mut rand, frame);
+            let mut need_time = false;
+            for (_, chunk, voxel_chunk) in iter.iter_mut() {
+                if tmr.elapsed().as_micros() < TIME_PER_CHUNK {
+                    if !chunk.skip_simulation {
+                        chunk.simulate(voxel_chunk, &mut rand, frame);
+                        chunk.skip_simulation = true;
+                    }
+                } else {
+                    chunk.skip_simulation = false;
+                    need_time = true;
+                }
+            }
+            if !need_time {
+                for (_, chunk, _) in iter {
+                    chunk.skip_simulation = false;
+                }
             }
         });
     }
@@ -64,11 +81,26 @@ impl ChunkMap {
         let max_x = self.chunks.max_elem.x;
         let min_y = self.chunks.min_elem.y;
         let max_y = self.chunks.max_elem.y;
+        let tmr = Instant::now();
+        let mut need_time = false;
         for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
             let chunk_index = MatrixIndex { x, y };
-            if self[chunk_index].is_some() {
-                self.simulate_chunk_edges(voxel_world, chunk_index, frame, &mut rand);
-                self.simulate_chunk_corners(voxel_world, chunk_index, frame, &mut rand);
+            if let Some(chunk) = &mut self[chunk_index] {
+                if tmr.elapsed().as_micros() < TIME_PER_CHUNK {
+                    if !chunk.skip_edge_simulation {
+                        chunk.skip_edge_simulation = true;
+                        self.simulate_chunk_edges(voxel_world, chunk_index, frame, &mut rand);
+                        self.simulate_chunk_corners(voxel_world, chunk_index, frame, &mut rand);
+                    }
+                } else {
+                    chunk.skip_edge_simulation = false;
+                    need_time = true;
+                }
+            }
+        }
+        if !need_time {
+            for (_, chunk) in self.iter_mut() {
+                chunk.skip_edge_simulation = false;
             }
         }
     }

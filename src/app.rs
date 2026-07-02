@@ -9,7 +9,10 @@ use crate::world_image::{PixelLength, display_world, on_resize_world};
 use crate::{APP_NAME, PIXEL_LENGTH};
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
-use bevy::app::{App, AppExit, FixedUpdate, PluginGroup as _, Startup, Update};
+use bevy::app::{
+    App, AppExit, FixedUpdate, PluginGroup as _, Startup, TaskPoolOptions, TaskPoolPlugin,
+    TaskPoolThreadAssignmentPolicy, Update,
+};
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
 use bevy::camera::ClearColor;
 use bevy::color::Color;
@@ -37,7 +40,34 @@ pub fn app_run() -> AppExit {
                 meta_check: AssetMetaCheck::Never,
                 ..AssetPlugin::default()
             })
-            .set(ImagePlugin::default_nearest()),
+            .set(ImagePlugin::default_nearest())
+            .set(TaskPoolPlugin {
+                task_pool_options: TaskPoolOptions {
+                    min_total_threads: 1,
+                    max_total_threads: usize::MAX,
+                    io: TaskPoolThreadAssignmentPolicy {
+                        min_threads: 1,
+                        max_threads: 1,
+                        percent: 0.25,
+                        on_thread_spawn: None,
+                        on_thread_destroy: None,
+                    },
+                    async_compute: TaskPoolThreadAssignmentPolicy {
+                        min_threads: 1,
+                        max_threads: 1,
+                        percent: 0.25,
+                        on_thread_spawn: None,
+                        on_thread_destroy: None,
+                    },
+                    compute: TaskPoolThreadAssignmentPolicy {
+                        min_threads: 1,
+                        max_threads: usize::MAX,
+                        percent: 1.0,
+                        on_thread_spawn: None,
+                        on_thread_destroy: None,
+                    },
+                },
+            }),
         PhysicsPlugins::default(),
         SettingsPlugin::new(APP_NAME),
         #[cfg(feature = "colliders")]

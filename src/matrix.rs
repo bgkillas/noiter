@@ -1,14 +1,15 @@
+use crate::chunk::{Chunk, VoxelChunk};
 use crate::{CHUNK_MAP_HEIGHT, CHUNK_MAP_WIDTH, CHUNK_WIDTH, CHUNK_WIDTH_LAST, ChunkIndexType};
 use avian2d::parry::math::IVector;
 use bevy::tasks::ComputeTaskPool;
-use std::array;
 use std::cmp::Ordering;
 use std::hint::assert_unchecked;
 use std::marker::PhantomData;
-use std::mem::MaybeUninit;
+use std::mem::{MaybeUninit, offset_of};
 use std::ops::{Add, Index, IndexMut, Sub};
 use std::ptr::NonNull;
 use std::range::RangeFrom;
+use std::{array, ptr};
 #[derive(Clone)]
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
@@ -268,12 +269,18 @@ impl<T> MatrixBounded<T> {
     }
     pub fn par_iter_mut<R: Send + 'static>(
         &mut self,
-        f: impl Fn(&mut dyn Iterator<Item = (MatrixIndex, &mut T)>) -> R + Send + Sync,
+        f: impl Fn(&mut [(MatrixIndex, &mut T)]) -> R + Send + Sync,
     ) -> Vec<R> {
         #[repr(transparent)]
         struct SendPtr<T>(NonNull<T>);
         unsafe impl<T> Send for SendPtr<T> {}
         unsafe impl<T> Sync for SendPtr<T> {}
+        const FIRST: usize = offset_of!((MatrixIndex, &mut Chunk), 0);
+        const SECOND: usize = offset_of!((MatrixIndex, &mut Chunk), 1);
+        const FIRST_PTR: usize = offset_of!((MatrixIndex, *mut Chunk), 0);
+        const SECOND_PTR: usize = offset_of!((MatrixIndex, *mut Chunk), 1);
+        const _: () = assert!(FIRST == FIRST_PTR);
+        const _: () = assert!(SECOND == SECOND_PTR);
         let task_pool = ComputeTaskPool::get();
         let chunk_size = (self.len / task_pool.thread_num()).max(1);
         let f_ref = &f;
@@ -285,10 +292,9 @@ impl<T> MatrixBounded<T> {
         task_pool.scope(|scope| {
             for chunk_ptr in list.chunks_mut(chunk_size) {
                 scope.spawn(async move {
-                    let mut iter = chunk_ptr
-                        .iter_mut()
-                        .map(|(i, p)| (*i, unsafe { p.0.as_mut() }));
-                    f_ref(&mut iter)
+                    let chunk =
+                        unsafe { &mut *(ptr::from_mut(chunk_ptr) as *mut [(MatrixIndex, &mut T)]) };
+                    f_ref(chunk)
                 });
             }
         })
@@ -296,12 +302,21 @@ impl<T> MatrixBounded<T> {
     pub fn par_iter_zip_mut<R: Send + 'static, K>(
         &mut self,
         other: &mut MatrixBounded<K>,
-        f: impl Fn(&mut dyn Iterator<Item = (MatrixIndex, &mut T, &mut K)>) -> R + Send + Sync,
+        f: impl Fn(&mut [(MatrixIndex, &mut T, &mut K)]) -> R + Send + Sync,
     ) -> Vec<R> {
         #[repr(transparent)]
         struct SendPtr<T>(NonNull<T>);
         unsafe impl<T> Send for SendPtr<T> {}
         unsafe impl<T> Sync for SendPtr<T> {}
+        const FIRST: usize = offset_of!((MatrixIndex, &mut Chunk, &mut VoxelChunk), 0);
+        const SECOND: usize = offset_of!((MatrixIndex, &mut Chunk, &mut VoxelChunk), 1);
+        const THIRD: usize = offset_of!((MatrixIndex, &mut Chunk, &mut VoxelChunk), 2);
+        const FIRST_PTR: usize = offset_of!((MatrixIndex, *mut Chunk, *mut VoxelChunk), 0);
+        const SECOND_PTR: usize = offset_of!((MatrixIndex, *mut Chunk, *mut VoxelChunk), 1);
+        const THIRD_PTR: usize = offset_of!((MatrixIndex, *mut Chunk, *mut VoxelChunk), 2);
+        const _: () = assert!(FIRST == FIRST_PTR);
+        const _: () = assert!(SECOND == SECOND_PTR);
+        const _: () = assert!(THIRD == THIRD_PTR);
         let task_pool = ComputeTaskPool::get();
         let chunk_size = (self.len / task_pool.thread_num()).max(1);
         let f_ref = &f;
@@ -316,10 +331,10 @@ impl<T> MatrixBounded<T> {
         task_pool.scope(|scope| {
             for chunk_ptr in list.chunks_mut(chunk_size) {
                 scope.spawn(async move {
-                    let mut iter = chunk_ptr
-                        .iter_mut()
-                        .map(|(i, a, b)| (*i, unsafe { a.0.as_mut() }, unsafe { b.0.as_mut() }));
-                    f_ref(&mut iter)
+                    let chunk = unsafe {
+                        &mut *(ptr::from_mut(chunk_ptr) as *mut [(MatrixIndex, &mut T, &mut K)])
+                    };
+                    f_ref(chunk)
                 });
             }
         })
