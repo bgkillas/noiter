@@ -1,6 +1,5 @@
 use crate::chunk::Chunk;
 use crate::chunk_map::{ChunkMap, VoxelChunkMap};
-use crate::matrix::MatrixIndex;
 use crate::pixel_run::PixelRunBuilder;
 use crate::world_image::WorldImage;
 use crate::{APP_NAME, CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType, PIXEL_SCALE};
@@ -67,43 +66,45 @@ pub fn load_chunks(
                 ret
             },
         )
-        .iter()
+        .into_iter()
         .flatten()
-        .copied()
     {
         commands.entity(ent).despawn();
     }
-    let mut small_rng: SmallRng = make_rng();
     let uniform = Uniform::new(2, 5).unwrap();
-    let mut pixel_run = PixelRunBuilder::default();
-    for y in min_cy..=max_cy {
-        for x in min_cx..=max_cx {
-            let i = MatrixIndex { x, y };
-            if world[i].is_some() {
-                continue;
+    for (idx, chunk) in world
+        .par_iter_none_in_range(min_cx, min_cy, max_cx, max_cy, |iter| {
+            let mut small_rng: SmallRng = make_rng();
+            let mut pixel_run = PixelRunBuilder::default();
+            let mut vec = Vec::with_capacity(iter.len());
+            for idx in iter.iter().copied() {
+                if let Ok(file) = OpenOptions::new()
+                    .read(true)
+                    .create(false)
+                    .open(folder_name.join(format!("{}x{}", idx.x, idx.y)))
+                {
+                    pixel_run.read(file);
+                    let mut iter = pixel_run.pixel_run().iter();
+                    vec.push((idx, Chunk::new(|_| iter.next().unwrap())));
+                    pixel_run.clear();
+                } else {
+                    vec.push((
+                        idx,
+                        Chunk::new(|_| {
+                            if small_rng.random_bool(0.8) {
+                                0
+                            } else {
+                                small_rng.sample(uniform)
+                            }
+                        }),
+                    ));
+                }
             }
-            if let Ok(file) = OpenOptions::new()
-                .read(true)
-                .create(false)
-                .open(folder_name.join(format!("{}x{}", i.x, i.y)))
-            {
-                pixel_run.read(file);
-                let mut iter = pixel_run.pixel_run().iter();
-                world.insert(&mut voxel_world, i, Chunk::new(|_| iter.next().unwrap()));
-                pixel_run.clear();
-                continue;
-            }
-            world.insert(
-                &mut voxel_world,
-                i,
-                Chunk::new(|_| {
-                    if small_rng.random_bool(0.8) {
-                        0
-                    } else {
-                        small_rng.sample(uniform)
-                    }
-                }),
-            );
-        }
+            vec
+        })
+        .into_iter()
+        .flatten()
+    {
+        world.insert(&mut voxel_world, idx, chunk);
     }
 }

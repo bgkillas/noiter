@@ -370,6 +370,39 @@ impl<T> MatrixBounded<T> {
             })
         }
     }
+    pub fn par_iter_none_in_range<R: Send + 'static>(
+        &mut self,
+        min_cx: ChunkIndexType,
+        min_cy: ChunkIndexType,
+        max_cx: ChunkIndexType,
+        max_cy: ChunkIndexType,
+        f: impl Fn(&[MatrixIndex]) -> R + Send + Sync,
+    ) -> Vec<R> {
+        let task_pool = ComputeTaskPool::get();
+        let chunk_size = (self.len / task_pool.thread_num()).max(1);
+        let f_ref = &f;
+        let mut list = Vec::with_capacity(
+            (max_cy.strict_cast::<usize>() + 1 - min_cy.strict_cast::<usize>())
+                * (max_cx.strict_cast::<usize>() + 1 - min_cx.strict_cast::<usize>()),
+        );
+        for y in min_cy..=max_cy {
+            for x in min_cx..=max_cx {
+                let idx = MatrixIndex { x, y };
+                if self[idx].is_none() {
+                    list.push(idx);
+                }
+            }
+        }
+        if list.is_empty() {
+            Vec::new()
+        } else {
+            task_pool.scope(|scope| {
+                for chunk in list.chunks_mut(chunk_size) {
+                    scope.spawn(async move { f_ref(chunk) });
+                }
+            })
+        }
+    }
     pub fn iter(&self) -> impl Iterator<Item = (MatrixIndex, &T)> {
         (self.min_elem.y..=self.max_elem.y).flat_map(move |y| {
             (self.min_elem.x..=self.max_elem.x).filter_map(move |x| {
