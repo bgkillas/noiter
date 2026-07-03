@@ -3,6 +3,7 @@
 #![feature(slice_ptr_get)]
 #![cfg_attr(test, feature(test))]
 pub mod app;
+pub mod array;
 #[cfg(test)]
 mod bench;
 pub mod camera;

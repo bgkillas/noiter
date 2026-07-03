@@ -1,64 +1,10 @@
 use crate::CHUNK_AREA;
+use crate::array::Array;
 use crate::cell::CellId;
 use crate::chunk::Chunk;
 use std::fs::File;
-use std::hint::assert_unchecked;
 use std::io::{Read as _, Write as _};
-use std::mem::MaybeUninit;
-use std::ops::Index;
-use std::{ptr, slice};
-pub struct Array<T, const N: usize> {
-    pub arr: [MaybeUninit<T>; N],
-    pub len: usize,
-}
-impl<T, const N: usize> Default for Array<T, N> {
-    fn default() -> Self {
-        Self {
-            arr: [const { MaybeUninit::uninit() }; N],
-            len: 0,
-        }
-    }
-}
-impl<T, const N: usize> Index<usize> for Array<T, N> {
-    type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        unsafe {
-            assert_unchecked(self.len < N);
-        }
-        if self.len > index {
-            unsafe { self.arr[index].assume_init_ref() }
-        } else {
-            unreachable!()
-        }
-    }
-}
-impl<T, const N: usize> Array<T, N> {
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        unsafe {
-            assert_unchecked(self.len < N);
-        }
-        self.arr[..self.len]
-            .iter()
-            .map(|e| unsafe { e.assume_init_ref() })
-    }
-    pub fn push(&mut self, val: T) {
-        unsafe {
-            assert_unchecked(self.len < N);
-        }
-        self.arr[self.len].write(val);
-        self.len += 1;
-    }
-    pub fn clear(&mut self) {
-        self.len = 0;
-    }
-    #[must_use]
-    pub fn slice(&self) -> &[T] {
-        unsafe {
-            assert_unchecked(self.len < N);
-        }
-        unsafe { &*(ptr::from_ref(&self.arr[..self.len]) as *const [T]) }
-    }
-}
+use std::slice;
 pub struct PixelRun<'a> {
     pub arr: &'a [[u16; 2]],
 }
