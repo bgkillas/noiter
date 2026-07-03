@@ -1,7 +1,7 @@
 use crate::chunk::Chunk;
 use crate::matrix::MatrixIndex;
 use crate::pixel_run::PixelRunBuilder;
-use crate::simulate_world_data::WorldRand;
+use crate::simulate_world::WorldRand;
 use crate::world_data::{VoxelWorld, World};
 use crate::world_image::write_data;
 use test::{Bencher, black_box};

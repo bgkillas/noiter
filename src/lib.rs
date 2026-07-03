@@ -9,8 +9,10 @@ mod bench;
 pub mod camera;
 pub mod load_chunks;
 pub mod pointer;
+pub mod shapes;
 pub mod startup;
 pub mod world;
+pub use shapes::*;
 pub use world::*;
 #[cfg(test)]
 extern crate test;

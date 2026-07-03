@@ -1,5 +1,5 @@
 use crate::PIXEL_LENGTH;
-use crate::camera::{align_camera, move_camera, zoom_camera};
+use crate::camera::align_camera;
 use crate::collider_world::update_colliders;
 use crate::load_chunks::load_chunks;
 use crate::simulate_world::simulate_world;
@@ -23,12 +23,7 @@ impl Plugin for WorldPlugin {
         );
         app.add_systems(
             FixedUpdate,
-            (
-                (align_camera, move_camera, zoom_camera),
-                load_chunks,
-                simulate_world,
-            )
-                .chain(),
+            (align_camera, load_chunks, simulate_world).chain(),
         );
         app.insert_resource(PixelLength(PIXEL_LENGTH));
     }

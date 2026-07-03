@@ -1,4 +1,5 @@
 use crate::PIXEL_SCALE;
+use crate::circle::Circle;
 use crate::world_data::{FullIndex, VoxelWorld, World};
 use bevy::camera::{Camera, Camera2d};
 use bevy::input::ButtonInput;
@@ -24,8 +25,8 @@ pub fn spawn_cells(
     {
         let px = (pos.x / PIXEL_SCALE).floor();
         let py = (pos.y / PIXEL_SCALE).floor();
-        for (x, y) in shapes::circle::Circle::new(px as usize, py as usize, 8) {
-            let index = FullIndex::from((x.strict_cast::<u16>(), y.strict_cast::<u16>()));
+        for (x, y) in Circle::new(px as u16, py as u16, 8) {
+            let index = FullIndex::from((x, y));
             world.set(
                 &mut voxel_world,
                 index,

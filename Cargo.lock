@@ -3586,7 +3586,6 @@ dependencies = [
  "console_error_panic_hook",
  "getrandom 0.4.3",
  "rand",
- "shapes",
  "uninit_map",
  "wasm-bindgen",
 ]
@@ -4730,11 +4729,6 @@ checksum = "6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26"
 dependencies = [
  "serde_core",
 ]
-
-[[package]]
-name = "shapes"
-version = "0.1.0"
-source = "git+https://github.com/bgkillas/helix#a9ccb2874231588f0247c7bfca83712f46df189f"
 
 [[package]]
 name = "sharded-slab"
