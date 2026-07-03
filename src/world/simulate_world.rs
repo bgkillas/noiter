@@ -8,7 +8,6 @@ use bevy::prelude::{Local, Res, ResMut};
 use rand::distr::{Bernoulli, Uniform};
 use rand::rngs::SmallRng;
 use rand::{RngExt as _, make_rng};
-use std::hint::cold_path;
 use std::mem;
 use std::time::Instant;
 const TIME_PER_CHUNK: u128 = 2048;
@@ -296,7 +295,7 @@ impl World {
             if let Some(chunk) = &mut self[index.chunk_index] {
                 chunk.cells.swap(index.cell_index, swap_index.cell_index);
             } else {
-                cold_path();
+                unreachable!()
             }
         } else if let [Some(from), Some(to)] = self
             .chunks
@@ -305,7 +304,7 @@ impl World {
         {
             mem::swap(&mut from[index.cell_index], &mut to[swap_index.cell_index]);
         } else {
-            cold_path();
+            unreachable!()
         }
     }
 }

@@ -89,11 +89,17 @@ pub struct Cell {
     pub cell_type: CellType,
     pub last_changed: u8,
     pub velocity: CellVelocity,
+    pub friction: CellFriction,
 }
 #[derive(Clone, Default)]
 pub struct CellVelocity {
     pub x: i8,
     pub y: i8,
+}
+#[derive(Clone, Default)]
+pub struct CellFriction {
+    pub x: u8,
+    pub y: u8,
 }
 impl Cell {
     #[must_use]
@@ -106,7 +112,23 @@ impl Cell {
             cell_type: cell_data.type_data.cell_type(),
             last_changed: 0,
             velocity: CellVelocity::default(),
+            friction: CellFriction::default(),
         }
+    }
+    pub fn friction(&mut self, x: u8, y: u8) {
+        fn run(f: &mut i8, r: &mut u8, i: u8) {
+            let (n, over) = r.overflowing_shl(i.strict_cast());
+            *r = n;
+            if over {
+                if f.is_positive() {
+                    *f -= 1;
+                } else {
+                    *f += 1;
+                }
+            }
+        }
+        run(&mut self.velocity.x, &mut self.friction.x, x);
+        run(&mut self.velocity.y, &mut self.friction.y, y);
     }
     #[must_use]
     pub fn is_air(&self) -> bool {
@@ -124,6 +146,10 @@ impl Cell {
         ) && !ptr::eq(self.cell_data, other.cell_data)
     }
     pub fn into(&mut self, id: CellId) {
-        *self = Cell::new(id);
+        let cell_data = &CELLS[id.strict_cast::<usize>()];
+        self.id = id;
+        self.cell_data = cell_data;
+        self.cell_type = cell_data.type_data.cell_type();
+        self.color = cell_data.color;
     }
 }
