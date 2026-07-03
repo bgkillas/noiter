@@ -1,6 +1,6 @@
 use crate::chunk::Chunk;
-use crate::chunk_map::{ChunkMap, VoxelChunkMap};
 use crate::pixel_run::PixelRunBuilder;
+use crate::world_data::{VoxelWorld, World};
 use crate::world_image::WorldImage;
 use crate::{APP_NAME, CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType, PIXEL_SCALE};
 use bevy::camera::Camera2d;
@@ -13,8 +13,8 @@ use std::fs;
 use std::fs::OpenOptions;
 pub const WORLD_FOLDER: &str = "world";
 pub fn load_chunks(
-    mut world: ResMut<ChunkMap>,
-    mut voxel_world: ResMut<VoxelChunkMap>,
+    mut world: ResMut<World>,
+    mut voxel_world: ResMut<VoxelWorld>,
     mut commands: Commands,
     camera: Single<&Transform, With<Camera2d>>,
     world_image: Single<&WorldImage>,

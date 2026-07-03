@@ -5,10 +5,10 @@ use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::ecs::resource::Resource;
 use std::ops::{Add, Deref, DerefMut, Index, IndexMut, Sub};
 #[derive(Resource)]
-pub struct ChunkMapModified {
+pub struct WorldModified {
     pub visual_modified: bool,
 }
-impl Default for ChunkMapModified {
+impl Default for WorldModified {
     fn default() -> Self {
         Self {
             visual_modified: true,
@@ -16,11 +16,11 @@ impl Default for ChunkMapModified {
     }
 }
 #[derive(Resource, Default)]
-pub struct ChunkMap {
+pub struct World {
     pub chunks: MatrixBounded<Chunk>,
 }
 #[derive(Resource, Default)]
-pub struct VoxelChunkMap {
+pub struct VoxelWorld {
     pub chunks: MatrixBounded<VoxelChunk>,
 }
 #[repr(C)]
@@ -92,7 +92,7 @@ impl From<(u16, u16)> for FullIndex {
         }
     }
 }
-impl ChunkMap {
+impl World {
     #[must_use]
     pub fn get(&self, index: FullIndex) -> Option<&Cell> {
         self.chunks[index.chunk_index]
@@ -105,58 +105,58 @@ impl ChunkMap {
             .as_mut()
             .map(|c| &mut c[index.cell_index])
     }
-    pub fn load(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: MatrixIndex) {
+    pub fn load(&mut self, voxel_world: &mut VoxelWorld, index: MatrixIndex) {
         if self[index].is_none() {
-            self.insert(voxel_chunk_map, index, Chunk::new(|_| 0));
+            self.insert(voxel_world, index, Chunk::new(|_| 0));
         }
     }
-    pub fn set(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: FullIndex, id: CellId) {
+    pub fn set(&mut self, voxel_world: &mut VoxelWorld, index: FullIndex, id: CellId) {
         if let Some(cell) = self.get_mut(index) {
             let old = cell.is_collider();
             cell.into(id);
             let new = cell.is_collider();
             if new != old {
-                voxel_chunk_map.add_voxel(index, new);
+                voxel_world.add_voxel(index, new);
             }
         }
     }
     pub fn insert(
         &mut self,
-        voxel_chunk_map: &mut VoxelChunkMap,
+        voxel_world: &mut VoxelWorld,
         index: MatrixIndex,
         (chunk, voxel_chunk): (Chunk, VoxelChunk),
     ) {
         self.chunks.insert(index, chunk);
-        voxel_chunk_map.chunks.insert(index, voxel_chunk);
+        voxel_world.chunks.insert(index, voxel_chunk);
     }
-    pub fn remove(&mut self, voxel_chunk_map: &mut VoxelChunkMap, index: MatrixIndex) {
+    pub fn remove(&mut self, voxel_world: &mut VoxelWorld, index: MatrixIndex) {
         self.chunks.remove(index);
-        voxel_chunk_map.chunks.remove(index);
+        voxel_world.chunks.remove(index);
     }
 }
-impl Index<MatrixIndex> for ChunkMap {
+impl Index<MatrixIndex> for World {
     type Output = Option<Chunk>;
     fn index(&self, index: MatrixIndex) -> &Self::Output {
         &self.chunks[index]
     }
 }
-impl IndexMut<MatrixIndex> for ChunkMap {
+impl IndexMut<MatrixIndex> for World {
     fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
         &mut self.chunks[index]
     }
 }
-impl Index<MatrixIndex> for VoxelChunkMap {
+impl Index<MatrixIndex> for VoxelWorld {
     type Output = Option<VoxelChunk>;
     fn index(&self, index: MatrixIndex) -> &Self::Output {
         &self.chunks[index]
     }
 }
-impl IndexMut<MatrixIndex> for VoxelChunkMap {
+impl IndexMut<MatrixIndex> for VoxelWorld {
     fn index_mut(&mut self, index: MatrixIndex) -> &mut Self::Output {
         &mut self.chunks[index]
     }
 }
-impl VoxelChunkMap {
+impl VoxelWorld {
     pub fn add_voxel(&mut self, index: FullIndex, into: bool) {
         if let Some(chunk) = &mut self[index.chunk_index] {
             chunk.add_voxel(index.cell_index, into);
@@ -178,24 +178,24 @@ impl VoxelChunk {
         }
     }
 }
-impl Deref for ChunkMap {
+impl Deref for World {
     type Target = MatrixBounded<Chunk>;
     fn deref(&self) -> &Self::Target {
         &self.chunks
     }
 }
-impl DerefMut for ChunkMap {
+impl DerefMut for World {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.chunks
     }
 }
-impl Deref for VoxelChunkMap {
+impl Deref for VoxelWorld {
     type Target = MatrixBounded<VoxelChunk>;
     fn deref(&self) -> &Self::Target {
         &self.chunks
     }
 }
-impl DerefMut for VoxelChunkMap {
+impl DerefMut for VoxelWorld {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.chunks
     }

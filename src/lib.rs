@@ -7,19 +7,11 @@ pub mod array;
 #[cfg(test)]
 mod bench;
 pub mod camera;
-pub mod cell;
-pub mod cells;
-pub mod chunk;
-pub mod chunk_map;
-pub mod collider_world;
 pub mod load_chunks;
-pub mod matrix;
-pub mod pixel_run;
 pub mod pointer;
-pub mod simulate_world;
 pub mod startup;
-pub mod uninit_cell_map;
-pub mod world_image;
+pub mod world;
+pub use world::*;
 #[cfg(test)]
 extern crate test;
 pub const APP_NAME: &str = "com.github.bgkillas.noiter";

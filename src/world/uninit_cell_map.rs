@@ -1,5 +1,5 @@
-use crate::chunk_map::{ChunkMap, FullIndex};
 use crate::matrix::Matrix;
+use crate::world_data::{FullIndex, World};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH};
 use std::mem::MaybeUninit;
 use uninit_map::uninit_map::UninitMap;
@@ -9,7 +9,7 @@ pub struct CellMap<T> {
 }
 impl<T> CellMap<T> {
     #[must_use]
-    pub fn new(world: &ChunkMap) -> Self {
+    pub fn new(world: &World) -> Self {
         let mut chunk_index = Matrix::uninit();
         for (i, (m, _)) in world.chunks.iter().enumerate() {
             chunk_index[m].write(i);

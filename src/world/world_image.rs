@@ -1,6 +1,6 @@
 use crate::PIXEL_SCALE;
 use crate::cell::CellColor;
-use crate::chunk_map::{ChunkMap, ChunkMapModified, FullIndex};
+use crate::world_data::{FullIndex, World, WorldModified};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::image::Image;
@@ -29,8 +29,8 @@ pub fn display_world(
     mut images: ResMut<Assets<Image>>,
     world_image: Single<(&mut Transform, &WorldImage), Without<Camera2d>>,
     camera: Single<&Transform, (With<Camera2d>, Without<WorldImage>)>,
-    world: Res<ChunkMap>,
-    mut modified: ResMut<ChunkMapModified>,
+    world: Res<World>,
+    mut modified: ResMut<WorldModified>,
     mut last_pos: Local<CameraPos>,
 ) {
     let (mut transform, world_image_dim) = world_image.into_inner();
@@ -55,7 +55,7 @@ pub fn display_world(
     let ex = sx + world_image_dim.width;
     write_data(&world, chunks, sx, ex, ey);
 }
-pub(crate) fn write_data(world: &ChunkMap, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
+pub(crate) fn write_data(world: &World, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
     let mut y = ey;
     for arr in chunks.chunks_exact_mut((ex - sx).strict_cast()) {
         y -= 1;
@@ -75,7 +75,7 @@ pub fn on_resize_world(
     mut images: ResMut<Assets<Image>>,
     mut world_image: Single<&mut WorldImage>,
     pixel_length: Res<PixelLength>,
-    mut modified: ResMut<ChunkMapModified>,
+    mut modified: ResMut<WorldModified>,
 ) {
     if let Some(size) = resize_reader.read().last() {
         resize_world(
@@ -96,7 +96,7 @@ pub fn resize_world(
     images: &mut Assets<Image>,
     world_image: &mut WorldImage,
     pixel_length: u32,
-    modified: &mut ChunkMapModified,
+    modified: &mut WorldModified,
 ) {
     modified.visual_modified = true;
     let mut image = images.get_mut(world_image_handle).unwrap();

@@ -88,6 +88,12 @@ pub struct Cell {
     pub id: CellId,
     pub cell_type: CellType,
     pub last_changed: u8,
+    pub velocity: CellVelocity,
+}
+#[derive(Clone, Default)]
+pub struct CellVelocity {
+    pub x: i8,
+    pub y: i8,
 }
 impl Cell {
     #[must_use]
@@ -99,6 +105,7 @@ impl Cell {
             id,
             cell_type: cell_data.type_data.cell_type(),
             last_changed: 0,
+            velocity: CellVelocity::default(),
         }
     }
     #[must_use]

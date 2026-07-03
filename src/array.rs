@@ -52,10 +52,11 @@ impl<T, const N: usize> Array<T, N> {
         self.len += 1;
     }
     pub fn pop(&mut self) -> T {
-        self.len -= 1;
         unsafe {
             assert_unchecked(self.len < N);
+            assert_unchecked(self.len > 0);
         }
+        self.len -= 1;
         unsafe { mem::replace(&mut self.arr[self.len], MaybeUninit::uninit()).assume_init() }
     }
     pub fn drain(&mut self) -> impl Iterator<Item = T> {

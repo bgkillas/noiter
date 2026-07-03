@@ -1,4 +1,4 @@
-use crate::chunk_map::VoxelChunkMap;
+use crate::world_data::VoxelWorld;
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, PIXEL_SCALE};
 use avian2d::parry::math::IVector;
 use avian2d::prelude::{Collider, RigidBody};
@@ -6,13 +6,13 @@ use bevy::prelude::{Commands, Component, Query, ResMut, Transform, With};
 #[derive(Component)]
 pub struct ChunkCollider;
 pub fn update_colliders(
-    mut world: ResMut<VoxelChunkMap>,
+    mut world: ResMut<VoxelWorld>,
     mut commands: Commands,
     mut colliders: Query<&mut Collider, With<ChunkCollider>>,
 ) {
     world.update_colliders(&mut commands, &mut colliders);
 }
-impl VoxelChunkMap {
+impl VoxelWorld {
     pub fn update_colliders(
         &mut self,
         commands: &mut Commands,

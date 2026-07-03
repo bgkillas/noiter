@@ -1,22 +1,15 @@
-use crate::camera::{align_camera, move_camera, zoom_camera};
-use crate::chunk_map::{ChunkMap, ChunkMapModified, VoxelChunkMap};
-use crate::collider_world::update_colliders;
-use crate::load_chunks::load_chunks;
+use crate::plugin::WorldPlugin;
 use crate::pointer::spawn_cells;
-use crate::simulate_world::simulate_world;
 use crate::startup::startup;
-use crate::world_image::{PixelLength, display_world, on_resize_world};
+use crate::world_image::PixelLength;
 use crate::{APP_NAME, PIXEL_LENGTH};
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
 use bevy::app::{
     App, AppExit, FixedUpdate, PluginGroup as _, Startup, TaskPoolOptions, TaskPoolPlugin,
-    TaskPoolThreadAssignmentPolicy, Update,
+    TaskPoolThreadAssignmentPolicy,
 };
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
-use bevy::camera::ClearColor;
-use bevy::color::Color;
-use bevy::ecs::schedule::IntoScheduleConfigs as _;
 #[cfg(feature = "colliders")]
 use bevy::gizmos::AppGizmoBuilder as _;
 use bevy::image::ImagePlugin;
@@ -70,6 +63,7 @@ pub fn app_run() -> AppExit {
             }),
         PhysicsPlugins::default(),
         SettingsPlugin::new(APP_NAME),
+        WorldPlugin,
         #[cfg(feature = "colliders")]
         avian2d::debug_render::PhysicsDebugPlugin,
         #[cfg(feature = "fps")]
@@ -85,27 +79,8 @@ pub fn app_run() -> AppExit {
         },
         bevy::gizmos::config::GizmoConfig::default(),
     );
-    app.insert_resource(ChunkMap::default());
-    app.insert_resource(VoxelChunkMap::default());
-    app.insert_resource(ChunkMapModified::default());
-    app.insert_resource(ClearColor(Color::srgba_u32(0x96b7_ddff)));
     app.add_systems(Startup, startup);
-    app.add_systems(
-        Update,
-        (update_colliders, (on_resize_world, display_world).chain()),
-    );
-    app.add_systems(
-        FixedUpdate,
-        (
-            spawn_cells,
-            (
-                (align_camera, move_camera, zoom_camera),
-                load_chunks,
-                simulate_world,
-            )
-                .chain(),
-        ),
-    );
+    app.add_systems(FixedUpdate, spawn_cells);
     app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

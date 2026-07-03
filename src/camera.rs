@@ -1,5 +1,5 @@
 use crate::PIXEL_SCALE;
-use crate::chunk_map::ChunkMapModified;
+use crate::world_data::WorldModified;
 use crate::world_image::{PixelLength, WorldImage, WorldImageHandle, resize_world};
 use bevy::asset::Assets;
 use bevy::camera::{Camera2d, Projection};
@@ -51,7 +51,7 @@ pub fn zoom_camera(
     world_image_handle: Res<WorldImageHandle>,
     mut images: ResMut<Assets<Image>>,
     mut world_image: Single<&mut WorldImage>,
-    mut modified: ResMut<ChunkMapModified>,
+    mut modified: ResMut<WorldModified>,
 ) {
     match (
         kb_input.pressed(KeyCode::KeyQ),
