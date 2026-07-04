@@ -1,9 +1,8 @@
+use crate::APP_NAME;
 use crate::camera::{move_camera, zoom_camera};
 use crate::plugin::WorldPlugin;
 use crate::pointer::spawn_cells;
 use crate::startup::startup;
-use crate::world_image::PixelLength;
-use crate::{APP_NAME, PIXEL_LENGTH};
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
 use bevy::app::{
@@ -82,6 +81,5 @@ pub fn app_run() -> AppExit {
     );
     app.add_systems(Startup, startup);
     app.add_systems(FixedUpdate, (spawn_cells, move_camera, zoom_camera));
-    app.insert_resource(PixelLength(PIXEL_LENGTH));
     app.run()
 }

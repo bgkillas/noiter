@@ -36,10 +36,11 @@ name = "noiter_lib"
 bevy = {version = "0.19.0", default-features = false, features = ["2d", "ui", "bevy_settings"]}
 avian2d = {version = "0.7.0", features = ["simd", "parallel"]}
 uninit_map = {version = "0.1.0", git = "https://github.com/bgkillas/helix"}
-rand = { version = "0.10.1", default-features = false, features = ["std", "alloc", "simd_support", "sys_rng"] }
+rand = { version = "0.10.2", default-features = false, features = ["std", "alloc", "simd_support", "sys_rng"] }
 getrandom = "0.4.3"
 wasm-bindgen = {version="0.2.126", optional = true}
 console_error_panic_hook = {version="0.1.7",optional = true}
+arrayvec = "0.7.8"
 
 [lints.clippy]
 pedantic = {level = "warn", priority = -1}

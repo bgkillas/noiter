@@ -1,10 +1,10 @@
 use crate::CHUNK_AREA;
-use crate::array::Array;
 use crate::cell::CellId;
 use crate::chunk::Chunk;
+use arrayvec::ArrayVec;
 use std::fs::File;
 use std::io::{Read as _, Write as _};
-use std::slice;
+use std::{ptr, slice};
 pub struct PixelRun<'a> {
     pub arr: &'a [[u16; 2]],
 }
@@ -28,13 +28,13 @@ impl<'a> IntoIterator for PixelRun<'a> {
 }
 #[derive(Default)]
 pub struct PixelRunOwned {
-    pub arr: Array<[u16; 2], CHUNK_AREA>,
+    pub arr: ArrayVec<[u16; 2], CHUNK_AREA>,
 }
 impl PixelRunOwned {
     #[must_use]
     pub fn slice(&self) -> PixelRun<'_> {
         PixelRun {
-            arr: self.arr.slice(),
+            arr: self.arr.as_slice(),
         }
     }
 }
@@ -58,7 +58,7 @@ impl PixelRunBuilder {
     #[must_use]
     pub fn pixel_run(&self) -> PixelRun<'_> {
         PixelRun {
-            arr: self.inner.arr.slice(),
+            arr: self.inner.arr.as_slice(),
         }
     }
     pub fn finish(&mut self) {
@@ -92,9 +92,15 @@ impl PixelRunBuilder {
     }
     pub fn read(&mut self, mut file: File) {
         let slice = unsafe {
-            slice::from_raw_parts_mut((&raw mut self.inner.arr.arr).cast(), CHUNK_AREA * 4)
+            slice::from_raw_parts_mut(
+                ptr::from_mut(self.inner.arr.as_mut_slice()).cast(),
+                CHUNK_AREA * 4,
+            )
         };
-        self.inner.arr.len = file.read(slice).unwrap();
+        let len = file.read(slice).unwrap();
+        unsafe {
+            self.inner.arr.set_len(len);
+        }
     }
 }
 impl Chunk {
