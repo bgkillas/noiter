@@ -80,9 +80,9 @@ impl PixelRunBuilder {
     }
     pub fn write_chunk(&mut self, chunk: &Chunk) {
         let mut iter = chunk.cells.iter();
-        self.current = iter.next().unwrap().id;
+        self.current = iter.next().unwrap().id();
         for cell in iter {
-            self.push(cell.id);
+            self.push(cell.id());
         }
     }
     pub fn write(&self, mut file: File) {

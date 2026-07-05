@@ -62,7 +62,7 @@ pub(crate) fn write_data(world: &World, chunks: &mut [[u8; 4]], sx: u16, ex: u16
         for (x, c) in (sx..).zip(arr.iter_mut()) {
             let idx = FullIndex::from((x, y));
             *c = <[u8; 4]>::from(if let Some(cell) = world.get(idx) {
-                cell.color
+                cell.color()
             } else {
                 CellColor::AIR
             });

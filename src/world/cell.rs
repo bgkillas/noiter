@@ -5,6 +5,7 @@ pub type CellId = u16;
 pub struct CellData {
     pub color: CellColor,
     pub name: &'static str,
+    pub density: u8,
     pub type_data: CellDataType,
 }
 #[derive(Debug)]
@@ -81,22 +82,19 @@ impl CellColor {
     }
     pub const AIR: Self = Self::new(0x00, 0x00, 0x00, 0x00);
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Cell {
-    pub color: CellColor,
     pub cell_data: &'static CellData,
-    pub id: CellId,
-    pub cell_type: CellType,
     pub last_changed: u8,
     pub velocity: CellVelocity,
     pub friction: CellFriction,
 }
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct CellVelocity {
     pub x: i8,
     pub y: i8,
 }
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct CellFriction {
     pub x: u8,
     pub y: u8,
@@ -106,10 +104,7 @@ impl Cell {
     pub fn new(id: CellId) -> Self {
         let cell_data = &CELLS[id.strict_cast::<usize>()];
         Self {
-            color: cell_data.color,
             cell_data,
-            id,
-            cell_type: cell_data.type_data.cell_type(),
             last_changed: 0,
             velocity: CellVelocity::default(),
             friction: CellFriction::default(),
@@ -117,7 +112,7 @@ impl Cell {
     }
     pub fn friction(&mut self, x: u8, y: u8) {
         fn run(f: &mut i8, r: &mut u8, i: u8) {
-            let (n, over) = r.overflowing_shl(i.strict_cast());
+            let (n, over) = r.overflowing_add(i);
             *r = n;
             if over {
                 if f.is_positive() {
@@ -130,26 +125,41 @@ impl Cell {
         run(&mut self.velocity.x, &mut self.friction.x, x);
         run(&mut self.velocity.y, &mut self.friction.y, y);
     }
+    pub fn gravity(&mut self) {
+        self.velocity.y -= 1;
+    }
     #[must_use]
     pub fn is_air(&self) -> bool {
-        self.color.is_air()
+        self.color().is_air()
     }
     #[must_use]
     pub fn is_collider(&self) -> bool {
-        matches!(self.cell_type, CellType::Static | CellType::Granular)
+        matches!(self.cell_type(), CellType::Static | CellType::Granular)
+    }
+    #[must_use]
+    pub fn color(&self) -> CellColor {
+        self.cell_data.color
+    }
+    #[must_use]
+    pub fn cell_type(&self) -> CellType {
+        self.cell_data.type_data.cell_type()
+    }
+    #[must_use]
+    pub fn id(&self) -> CellId {
+        ((ptr::from_ref(self.cell_data).addr() - ptr::from_ref(&CELLS).addr())
+            / size_of::<CellData>())
+        .strict_cast()
+    }
+    #[must_use]
+    pub fn density(&self) -> u8 {
+        self.cell_data.density
     }
     #[must_use]
     pub fn can_move(&self, other: &Self) -> bool {
-        matches!(
-            other.cell_type,
-            CellType::Liquid | CellType::Gas | CellType::Air
-        ) && !ptr::eq(self.cell_data, other.cell_data)
+        self.density() > other.density()
     }
     pub fn into(&mut self, id: CellId) {
         let cell_data = &CELLS[id.strict_cast::<usize>()];
-        self.id = id;
         self.cell_data = cell_data;
-        self.cell_type = cell_data.type_data.cell_type();
-        self.color = cell_data.color;
     }
 }

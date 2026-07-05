@@ -200,7 +200,7 @@ impl World {
             return;
         }
         cell.last_changed = frame;
-        match cell.cell_type {
+        match cell.cell_type() {
             CellType::Liquid => {
                 let check = if rand.half() {
                     [
@@ -335,7 +335,7 @@ impl Chunk {
             return;
         }
         self[index].last_changed = frame;
-        match self[index].cell_type {
+        match self[index].cell_type() {
             CellType::Liquid => {
                 let check = if rand.half() {
                     [
