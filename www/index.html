@@ -2,7 +2,7 @@
 <html>
 <head>
     <link rel="modulepreload" href="pkg/noiter.js" as="script">
-    <link rel="preload" href="pkg/noiter_bg.wasm" as="fetch" type="application/wasm" crossorigin>
+    <link rel="preload" href="pkg/noiter_lib_bg.wasm" as="fetch" type="application/wasm" crossorigin>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>noiter</title>
@@ -29,7 +29,7 @@
     <canvas id="canvas"></canvas>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script type="module" crossorigin="anonymous" nonce="canv">
-        import init from './pkg/noiter.js'; async function run() { await init(); } run();
+        import init from './pkg/noiter_lib.js'; async function run() { await init(); } run();
     </script>
 </body>
 </html>
