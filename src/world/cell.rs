@@ -126,7 +126,9 @@ impl Cell {
         run(&mut self.velocity.y, &mut self.friction.y, y);
     }
     pub fn gravity(&mut self) {
-        self.velocity.y -= 1;
+        if self.velocity.y > -8 {
+            self.velocity.y -= 1;
+        }
     }
     #[must_use]
     pub fn is_air(&self) -> bool {

@@ -6,9 +6,6 @@ use crate::{APP_NAME, CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType, PIXEL_SCALE};
 use bevy::camera::Camera2d;
 use bevy::platform::dirs::preferences_dir;
 use bevy::prelude::{Commands, ResMut, Single, Transform, With};
-use rand::distr::Uniform;
-use rand::rngs::SmallRng;
-use rand::{RngExt as _, make_rng};
 use std::fs;
 use std::fs::OpenOptions;
 pub const WORLD_FOLDER: &str = "world";
@@ -66,9 +63,7 @@ pub fn load_chunks(
             ret
         },
     );
-    let uniform = Uniform::new(2, 5).unwrap();
     world.par_iter_none_in_range(&mut voxel_world, min_cx, min_cy, max_cx, max_cy, |iter| {
-        let mut small_rng: SmallRng = make_rng();
         let mut pixel_run = PixelRunBuilder::default();
         let mut vec = Vec::with_capacity(iter.len());
         for idx in iter.iter().copied() {
@@ -82,16 +77,7 @@ pub fn load_chunks(
                 vec.push((idx, Chunk::new(|_| iter.next().unwrap())));
                 pixel_run.clear();
             } else {
-                vec.push((
-                    idx,
-                    Chunk::new(|_| {
-                        if small_rng.random_bool(0.8) {
-                            0
-                        } else {
-                            small_rng.sample(uniform)
-                        }
-                    }),
-                ));
+                vec.push((idx, Chunk::new(|_| 0)));
             }
         }
         vec
