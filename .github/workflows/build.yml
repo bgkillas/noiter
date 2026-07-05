@@ -45,7 +45,7 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: noiter-linux
-        path: target/release/noiter
+        path: target/release_lto/noiter
   build-windows:
     runs-on: windows-latest
     steps:
@@ -60,7 +60,7 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: noiter.exe
-        path: target/release/noiter.exe
+        path: target/release_lto/noiter.exe
   build-macos:
     runs-on: macos-latest
     steps:
@@ -75,4 +75,4 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: noiter-macos
-        path: target/release/noiter
+        path: target/release_lto/noiter
