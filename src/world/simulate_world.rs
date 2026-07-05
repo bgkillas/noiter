@@ -54,10 +54,12 @@ impl WorldRand {
 impl World {
     pub fn simulate(&mut self, voxel_world: &mut VoxelWorld, frame: u8) {
         self.par_iter_zip_mut(voxel_world, |iter| {
+            #[cfg(not(feature = "wasm"))]
             let tmr = Instant::now();
             let mut rand = WorldRand::default();
             let mut need_time = false;
             for (_, chunk, voxel_chunk) in iter.iter_mut() {
+                #[cfg(not(feature = "wasm"))]
                 if tmr.elapsed().as_micros() < TIME_PER_CHUNK {
                     if !chunk.skip_simulation {
                         chunk.simulate(voxel_chunk, &mut rand, frame);
@@ -67,7 +69,12 @@ impl World {
                     chunk.skip_simulation = false;
                     need_time = true;
                 }
+                #[cfg(feature = "wasm")]
+                {
+                    chunk.simulate(voxel_chunk, &mut rand, frame);
+                }
             }
+            #[cfg(not(feature = "wasm"))]
             if !need_time {
                 for (_, chunk, _) in iter {
                     chunk.skip_simulation = false;
@@ -81,11 +88,13 @@ impl World {
         let max_x = self.chunks.max_elem.x;
         let min_y = self.chunks.min_elem.y;
         let max_y = self.chunks.max_elem.y;
+        #[cfg(not(feature = "wasm"))]
         let tmr = Instant::now();
         let mut need_time = false;
         for (x, y) in (min_y..=max_y).flat_map(|y| (min_x..=max_x).map(move |x| (x, y))) {
             let chunk_index = MatrixIndex { x, y };
             if let Some(chunk) = &mut self[chunk_index] {
+                #[cfg(not(feature = "wasm"))]
                 if tmr.elapsed().as_micros() < TIME_PER_CHUNK {
                     if !chunk.skip_edge_simulation {
                         chunk.skip_edge_simulation = true;
@@ -96,8 +105,14 @@ impl World {
                     chunk.skip_edge_simulation = false;
                     need_time = true;
                 }
+                #[cfg(feature = "wasm")]
+                {
+                    self.simulate_chunk_edges(voxel_world, chunk_index, frame, &mut rand);
+                    self.simulate_chunk_corners(voxel_world, chunk_index, frame, &mut rand);
+                }
             }
         }
+        #[cfg(not(feature = "wasm"))]
         if !need_time {
             for (_, chunk) in self.iter_mut() {
                 chunk.skip_edge_simulation = false;

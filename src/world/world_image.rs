@@ -56,6 +56,9 @@ pub fn display_world(
     write_data(&world, chunks, sx, ex, ey);
 }
 pub(crate) fn write_data(world: &World, chunks: &mut [[u8; 4]], sx: u16, ex: u16, ey: u16) {
+    if ex == sx {
+        return;
+    }
     let mut y = ey;
     for arr in chunks.chunks_exact_mut((ex - sx).strict_cast()) {
         y -= 1;
@@ -98,6 +101,9 @@ pub fn resize_world(
     pixel_length: u32,
     modified: &mut WorldModified,
 ) {
+    if width == 0 || height == 0 {
+        return;
+    }
     modified.visual_modified = true;
     let mut image = images.get_mut(world_image_handle).unwrap();
     let image_width = (width.div_ceil(pixel_length) + 2).next_multiple_of(2);

@@ -37,6 +37,28 @@ pub struct FullIndex {
     pub cell_index: MatrixIndex,
     pub chunk_index: MatrixIndex,
 }
+impl World {
+    #[must_use]
+    pub unsafe fn in_place() -> Box<Self> {
+        let mut boxed = Box::<Self>::new_uninit();
+        unsafe {
+            let ptr = &raw mut (*boxed.as_mut_ptr()).chunks;
+            MatrixBounded::default_init(ptr);
+            boxed.assume_init()
+        }
+    }
+}
+impl VoxelWorld {
+    #[must_use]
+    pub unsafe fn in_place() -> Box<Self> {
+        let mut boxed = Box::<Self>::new_uninit();
+        unsafe {
+            let ptr = &raw mut (*boxed.as_mut_ptr()).chunks;
+            MatrixBounded::default_init(ptr);
+            boxed.assume_init()
+        }
+    }
+}
 impl Add<(ChunkIndexType, ChunkIndexType)> for FullIndex {
     type Output = Self;
     fn add(self, (x, y): (ChunkIndexType, ChunkIndexType)) -> Self::Output {

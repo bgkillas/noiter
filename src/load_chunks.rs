@@ -48,6 +48,9 @@ pub fn load_chunks(
                 if let Some(ent) = voxel.collider {
                     ret.push(ent);
                 }
+                if cfg!(feature = "wasm") {
+                    continue;
+                }
                 pixel_run.write_chunk(chunk);
                 pixel_run.finish();
                 let file_name = folder_name.join(format!("{}x{}", i.x, i.y));
@@ -67,10 +70,11 @@ pub fn load_chunks(
         let mut pixel_run = PixelRunBuilder::default();
         let mut vec = Vec::with_capacity(iter.len());
         for idx in iter.iter().copied() {
-            if let Ok(file) = OpenOptions::new()
-                .read(true)
-                .create(false)
-                .open(folder_name.join(format!("{}x{}", idx.x, idx.y)))
+            if !cfg!(feature = "wasm")
+                && let Ok(file) = OpenOptions::new()
+                    .read(true)
+                    .create(false)
+                    .open(folder_name.join(format!("{}x{}", idx.x, idx.y)))
             {
                 pixel_run.read(file);
                 let mut iter = pixel_run.pixel_run().iter();

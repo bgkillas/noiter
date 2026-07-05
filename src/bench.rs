@@ -1,8 +1,6 @@
 use crate::chunk::Chunk;
 use crate::matrix::MatrixIndex;
-#[cfg(not(test))]
 use crate::pixel_run::PixelRunBuilder;
-#[cfg(not(test))]
 use crate::simulate_world::WorldRand;
 use crate::world_data::{VoxelWorld, World};
 use crate::world_image::write_data;
@@ -26,7 +24,6 @@ fn bench_write_data(bencher: &mut Bencher) {
         )
     })
 }
-#[cfg(not(test))]
 #[bench]
 fn bench_simulate(bencher: &mut Bencher) {
     let mut world = World::default();
@@ -43,7 +40,6 @@ fn bench_simulate(bencher: &mut Bencher) {
         i = i.wrapping_add(1);
     })
 }
-#[cfg(not(test))]
 #[bench]
 fn bench_pixel_run(bencher: &mut Bencher) {
     let mut world = World::default();

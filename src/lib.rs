@@ -1,9 +1,11 @@
 #![feature(integer_casts)]
 #![feature(int_roundings)]
 #![feature(slice_ptr_get)]
-#![cfg_attr(test, feature(test))]
+#![feature(box_vec_non_null)]
+#![cfg_attr(all(test, not(debug_assertions)), feature(test))]
 pub mod app;
 #[cfg(test)]
+#[cfg(not(debug_assertions))]
 mod bench;
 pub mod camera;
 pub mod load_chunks;
@@ -14,6 +16,7 @@ pub mod world;
 pub use shapes::*;
 pub use world::*;
 #[cfg(test)]
+#[cfg(not(debug_assertions))]
 extern crate test;
 pub const APP_NAME: &str = "com.github.bgkillas.noiter";
 pub const PIXEL_SCALE: f32 = 1.0;

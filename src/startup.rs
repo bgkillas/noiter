@@ -26,12 +26,12 @@ pub fn startup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     ));
     let image = Image::new(
         Extent3d {
-            width: 0,
-            height: 0,
+            width: 1,
+            height: 1,
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        vec![0; 0],
+        vec![0; 4],
         TextureFormat::Rgba8Unorm,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );

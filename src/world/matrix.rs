@@ -11,6 +11,7 @@ use std::ops::{Add, Index, IndexMut, Sub};
 use std::ptr::NonNull;
 use std::range::RangeFrom;
 use std::{array, ptr};
+#[repr(transparent)]
 #[derive(Clone)]
 pub struct Matrix<T> {
     pub elems: [[T; CHUNK_MAP_WIDTH]; CHUNK_MAP_HEIGHT],
@@ -229,6 +230,24 @@ impl<T> Default for MatrixBounded<T> {
     }
 }
 impl<T> MatrixBounded<T> {
+    pub unsafe fn default_init(ptr: *mut Self) {
+        unsafe {
+            (*ptr).min_elem = MatrixIndex {
+                x: ChunkIndexType::MAX,
+                y: ChunkIndexType::MAX,
+            };
+            (*ptr).max_elem = MatrixIndex { x: 0, y: 0 };
+            (*ptr).len = 0;
+            let matrix = &raw mut (*ptr).matrix.elems;
+            let mut elem_ptr = matrix.cast::<Option<T>>();
+            for _ in 0..CHUNK_MAP_WIDTH * CHUNK_MAP_HEIGHT {
+                elem_ptr.write(None);
+                elem_ptr = elem_ptr.add(1);
+            }
+        }
+    }
+}
+impl<T> MatrixBounded<T> {
     pub fn remove(&mut self, index: MatrixIndex) -> T {
         if let Some(r) = self.matrix[index].take() {
             let min_x = self.min_elem.x;
@@ -426,6 +445,7 @@ impl<T> MatrixBounded<T> {
             min_elem: self.min_elem,
             max_elem: self.max_elem,
             matrix: NonNull::new(&raw mut self.matrix).unwrap(),
+            done: self.min_elem.x > self.max_elem.x,
             phantom: PhantomData,
         }
         .filter_map(|(i, ch)| ch.as_mut().map(|c| (i, c)))
@@ -448,6 +468,7 @@ impl<T> MatrixBounded<T> {
             min_elem: self.min_elem,
             max_elem: self.max_elem,
             matrix: NonNull::new(&raw mut self.matrix).unwrap(),
+            done: self.min_elem.x > self.max_elem.x,
             phantom: PhantomData,
         }
         .filter(|(_, ch)| ch.is_some())
@@ -472,25 +493,28 @@ pub struct MatrixBoundedIterMut<'a, T> {
     min_elem: MatrixIndex,
     max_elem: MatrixIndex,
     matrix: NonNull<Matrix<Option<T>>>,
+    done: bool,
     phantom: PhantomData<&'a mut Matrix<Option<T>>>,
 }
 impl<'a, T> Iterator for MatrixBoundedIterMut<'a, T> {
     type Item = (MatrixIndex, &'a mut Option<T>);
     fn next(&mut self) -> Option<Self::Item> {
-        if self.min_elem_x > self.max_elem.x {
-            return None;
-        }
-        if self.min_elem.x > self.max_elem.x {
-            self.min_elem.x = self.min_elem_x;
-            self.min_elem.y += 1;
-        }
-        if self.min_elem.y > self.max_elem.y {
+        if self.done {
             return None;
         }
         let next = (self.min_elem, unsafe {
             self.matrix.as_mut().index_mut(self.min_elem)
         });
-        self.min_elem.x += 1;
+        if self.min_elem.x == self.max_elem.x {
+            self.min_elem.x = self.min_elem_x;
+            if self.min_elem.y == self.max_elem.y {
+                self.done = true;
+            } else {
+                self.min_elem.y += 1;
+            }
+        } else {
+            self.min_elem.x += 1;
+        }
         Some(next)
     }
 }
