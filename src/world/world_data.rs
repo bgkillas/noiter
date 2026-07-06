@@ -3,6 +3,7 @@ use crate::chunk::{Chunk, VoxelChunk};
 use crate::matrix::{MatrixBounded, MatrixIndex};
 use crate::{CHUNK_HEIGHT, CHUNK_WIDTH, ChunkIndexType};
 use bevy::ecs::resource::Resource;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, Deref, DerefMut, Index, IndexMut, Sub};
 #[derive(Resource)]
 pub struct WorldModified {
@@ -36,6 +37,15 @@ pub struct CellIndex {
 pub struct FullIndex {
     pub cell_index: MatrixIndex,
     pub chunk_index: MatrixIndex,
+}
+impl Display for FullIndex {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} {} {}",
+            self.chunk_index.x, self.chunk_index.y, self.cell_index.x, self.cell_index.y
+        )
+    }
 }
 impl World {
     #[must_use]

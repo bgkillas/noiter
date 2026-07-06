@@ -1,13 +1,13 @@
 use crate::APP_NAME;
 use crate::camera::{move_camera, zoom_camera};
 use crate::plugin::WorldPlugin;
-use crate::pointer::spawn_cells;
+use crate::pointer::{pointer_diagnostic, spawn_cells};
 use crate::startup::startup;
 use avian2d::PhysicsPlugins;
 use bevy::DefaultPlugins;
 use bevy::app::{
     App, AppExit, FixedUpdate, PluginGroup as _, Startup, TaskPoolOptions, TaskPoolPlugin,
-    TaskPoolThreadAssignmentPolicy,
+    TaskPoolThreadAssignmentPolicy, Update,
 };
 use bevy::asset::{AssetMetaCheck, AssetPlugin};
 #[cfg(feature = "colliders")]
@@ -80,6 +80,7 @@ pub fn app_run() -> AppExit {
         bevy::gizmos::config::GizmoConfig::default(),
     );
     app.add_systems(Startup, startup);
+    app.add_systems(Update, pointer_diagnostic);
     app.add_systems(FixedUpdate, (spawn_cells, move_camera, zoom_camera));
     app.run()
 }
