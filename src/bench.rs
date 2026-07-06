@@ -32,11 +32,7 @@ fn bench_simulate(bencher: &mut Bencher) {
     let mut i = 0;
     let mut world_rand = WorldRand::default();
     bencher.iter(|| {
-        world[MatrixIndex::new(0, 0)].as_mut().unwrap().simulate(
-            voxel_world[MatrixIndex::new(0, 0)].as_mut().unwrap(),
-            &mut world_rand,
-            i,
-        );
+        world.simulate_chunk(&mut voxel_world, MatrixIndex::new(0, 0), &mut world_rand, i);
         i = i.wrapping_add(1);
     })
 }

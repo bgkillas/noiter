@@ -1,4 +1,5 @@
 use crate::cells::CELLS;
+use crate::simulate_world::Direction;
 use std::{mem, ptr};
 pub type CellId = u16;
 #[derive(Debug)]
@@ -88,11 +89,32 @@ pub struct Cell {
     pub last_changed: u8,
     pub velocity: CellVelocity,
     pub friction: CellFriction,
+    pub gravity_part: u8,
 }
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct CellVelocity {
     pub x: i8,
     pub y: i8,
+}
+impl CellVelocity {
+    #[must_use]
+    pub fn is_zero(self) -> bool {
+        self.x == 0 && self.y == 0
+    }
+    #[must_use]
+    pub fn to_dir(self, direction: Direction) -> Self {
+        let Self { x, y } = self;
+        match direction {
+            Direction::UpLeft => Self { x: y, y: -y },
+            Direction::Up => Self { x, y: -y },
+            Direction::UpRight => Self { x: -y, y: -y },
+            Direction::Left => Self { x: -y, y: x },
+            Direction::Right => Self { x: y, y: x },
+            Direction::DownLeft => Self { x: y, y },
+            Direction::Down => Self { x, y },
+            Direction::DownRight => Self { x: -y, y },
+        }
+    }
 }
 #[derive(Clone, Default, Debug)]
 pub struct CellFriction {
@@ -108,6 +130,7 @@ impl Cell {
             last_changed: 0,
             velocity: CellVelocity::default(),
             friction: CellFriction::default(),
+            gravity_part: 0,
         }
     }
     pub fn friction(&mut self, x: u8, y: u8) {
@@ -122,12 +145,29 @@ impl Cell {
                 }
             }
         }
-        run(&mut self.velocity.x, &mut self.friction.x, x);
-        run(&mut self.velocity.y, &mut self.friction.y, y);
+        if self.velocity.x != 0 {
+            run(&mut self.velocity.x, &mut self.friction.x, x);
+        }
+        if self.velocity.y != 0 {
+            run(&mut self.velocity.y, &mut self.friction.y, y);
+        }
     }
-    pub fn gravity(&mut self) {
-        if self.velocity.y > -8 {
-            self.velocity.y -= 1;
+    pub fn gravity(&mut self, val: u8) {
+        if self.velocity.y > -4 {
+            let (n, over) = self.gravity_part.overflowing_add(val);
+            self.gravity_part = n;
+            if over {
+                self.velocity.y -= 1;
+            }
+        }
+    }
+    pub fn reverse_gravity(&mut self, val: u8) {
+        if self.velocity.y < 4 {
+            let (n, over) = self.gravity_part.overflowing_add(val);
+            self.gravity_part = n;
+            if over {
+                self.velocity.y += 1;
+            }
         }
     }
     #[must_use]

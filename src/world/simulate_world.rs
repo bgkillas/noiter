@@ -1,6 +1,8 @@
 use crate::cell::CellType;
+use crate::line::LineFullIter;
 use crate::matrix::MatrixIndex;
 use crate::world_data::{FullIndex, VoxelWorld, World, WorldModified};
+use crate::{CHUNK_HEIGHT_LAST, CHUNK_WIDTH_LAST};
 use bevy::diagnostic::FrameCount;
 use bevy::prelude::{Local, Res, ResMut};
 use rand::distr::{Bernoulli, Uniform};
@@ -46,6 +48,17 @@ impl WorldRand {
     pub fn gas(&mut self) -> usize {
         self.rng.sample(self.gas)
     }
+}
+#[derive(Clone, Copy, Debug)]
+pub enum Direction {
+    UpLeft,
+    Up,
+    UpRight,
+    Left,
+    Right,
+    DownLeft,
+    Down,
+    DownRight,
 }
 impl World {
     pub fn simulate(&mut self, voxel_world: &mut VoxelWorld, frame: u8) {
@@ -93,12 +106,24 @@ impl World {
         rand: &mut WorldRand,
         frame: u8,
     ) {
-        for i in 0..=65535 {
-            let index = FullIndex {
-                chunk_index,
-                cell_index: MatrixIndex::from(i),
-            };
-            self.simulate_cell(voxel_world, index, rand, frame);
+        for y in 0..=CHUNK_HEIGHT_LAST {
+            if y.is_multiple_of(2) ^ frame.is_multiple_of(2) {
+                for x in (0..=CHUNK_WIDTH_LAST).rev() {
+                    let index = FullIndex {
+                        chunk_index,
+                        cell_index: MatrixIndex { x, y },
+                    };
+                    self.simulate_cell(voxel_world, index, rand, frame);
+                }
+            } else {
+                for x in 0..=CHUNK_WIDTH_LAST {
+                    let index = FullIndex {
+                        chunk_index,
+                        cell_index: MatrixIndex { x, y },
+                    };
+                    self.simulate_cell(voxel_world, index, rand, frame);
+                }
+            }
         }
     }
     pub fn simulate_cell(
@@ -117,50 +142,53 @@ impl World {
         cell.last_changed = frame;
         match cell.cell_type() {
             CellType::Liquid => {
+                cell.gravity(64);
+                if cell.velocity.is_zero() {
+                    return;
+                }
                 let check = if rand.half() {
                     [
-                        index - (0, 1),
-                        index - (0, 1) + (1, 0),
-                        index - (0, 1) - (1, 0),
-                        index + (1, 0),
-                        index - (1, 0),
+                        Direction::Down,
+                        Direction::DownLeft,
+                        Direction::DownRight,
+                        Direction::Left,
+                        Direction::Right,
                     ]
                 } else {
                     [
-                        index - (0, 1),
-                        index - (0, 1) - (1, 0),
-                        index - (0, 1) + (1, 0),
-                        index - (1, 0),
-                        index + (1, 0),
+                        Direction::Down,
+                        Direction::DownRight,
+                        Direction::DownLeft,
+                        Direction::Right,
+                        Direction::Left,
                     ]
                 };
                 self.swap_from_list(voxel_world, index, &check);
             }
             CellType::Granular => {
+                cell.gravity(64);
+                if cell.velocity.is_zero() {
+                    return;
+                }
                 let check = if rand.half() {
-                    [
-                        index - (0, 1),
-                        index - (0, 1) + (1, 0),
-                        index - (0, 1) - (1, 0),
-                    ]
+                    [Direction::Down, Direction::DownLeft, Direction::DownRight]
                 } else {
-                    [
-                        index - (0, 1),
-                        index - (0, 1) - (1, 0),
-                        index - (0, 1) + (1, 0),
-                    ]
+                    [Direction::Down, Direction::DownRight, Direction::DownLeft]
                 };
                 self.swap_from_list(voxel_world, index, &check);
             }
             CellType::Gas => {
+                cell.gravity(64);
+                if cell.velocity.is_zero() {
+                    return;
+                }
                 let check = [match rand.gas() {
-                    0 => index + (0, 1) - (1, 0),
-                    1 => index + (0, 1),
-                    2 => index + (1, 1),
-                    3 => index - (1, 0),
-                    4 => index,
-                    5 => index + (1, 0),
-                    _ => unreachable!(),
+                    0 => Direction::UpLeft,
+                    1 => Direction::Up,
+                    2 => Direction::UpRight,
+                    3 => Direction::Left,
+                    4 => Direction::Right,
+                    _ => return,
                 }];
                 self.swap_from_list(voxel_world, index, &check);
             }
@@ -171,10 +199,10 @@ impl World {
         &mut self,
         voxel_world: &mut VoxelWorld,
         index: FullIndex,
-        check: &[FullIndex],
+        check: &[Direction],
     ) {
-        for swap_index in check.iter().copied() {
-            if self.try_swap(voxel_world, index, swap_index) {
+        for direction in check.iter().copied() {
+            if self.try_swap(voxel_world, index, direction) {
                 return;
             }
         }
@@ -183,13 +211,47 @@ impl World {
         &mut self,
         voxel_world: &mut VoxelWorld,
         index: FullIndex,
-        swap_index: FullIndex,
+        direction: Direction,
     ) -> bool {
-        if let Some(cell) = self.get(index)
-            && let Some(other) = self.get(swap_index)
-            && cell.can_move(other)
-        {
-            self.swap(voxel_world, index, swap_index);
+        if let Some(cell) = self.get(index) {
+            let vel = cell.velocity.to_dir(direction);
+            let mut line = LineFullIter::new_vel(index, vel);
+            line.next();
+            let mut last = index;
+            let mut n = 0;
+            for (_, swap_index) in line {
+                n += 1;
+                if let Some(new) = self.get(swap_index) {
+                    if new.is_air() {
+                        last = swap_index;
+                    } else if cell.can_move(new) {
+                        if let Some(cell) = self.get_mut(index) {
+                            for _ in 0..n {
+                                cell.friction(16, 16);
+                            }
+                        }
+                        if last == index {
+                            self.swap(voxel_world, index, swap_index);
+                        } else {
+                            self.swap(voxel_world, swap_index, last);
+                            self.swap(voxel_world, index, swap_index);
+                        }
+                        return true;
+                    } else if last == index {
+                        return false;
+                    } else {
+                        break;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            if let Some(cell) = self.get_mut(index) {
+                for _ in 0..n {
+                    cell.friction(16, 16);
+                }
+            }
+            self.swap(voxel_world, index, last);
             true
         } else {
             false

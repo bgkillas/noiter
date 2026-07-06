@@ -124,6 +124,17 @@ impl From<(u16, u16)> for FullIndex {
         }
     }
 }
+impl FullIndex {
+    #[must_use]
+    pub fn to_u16(self) -> (u16, u16) {
+        (
+            self.chunk_index.x.strict_cast::<u16>() * CHUNK_WIDTH.strict_cast::<u16>()
+                + self.cell_index.x.strict_cast::<u16>(),
+            self.chunk_index.y.strict_cast::<u16>() * CHUNK_HEIGHT.strict_cast::<u16>()
+                + self.cell_index.y.strict_cast::<u16>(),
+        )
+    }
+}
 impl World {
     #[must_use]
     pub fn get(&self, index: FullIndex) -> Option<&Cell> {

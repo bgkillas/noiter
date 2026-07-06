@@ -1,3 +1,51 @@
+use crate::cell::CellVelocity;
+use crate::world_data::FullIndex;
+#[derive(Debug, Clone, Default)]
+pub struct LineFullIter {
+    pub line: LineIter,
+}
+impl Iterator for LineFullIter {
+    type Item = (StepCase, FullIndex);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.line
+            .next()
+            .map(|(case, x2, y2)| (case, (x2, y2).into()))
+    }
+}
+impl LineFullIter {
+    #[inline]
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn back(&mut self, case: StepCase) {
+        self.line.back(case);
+    }
+    #[inline]
+    #[must_use]
+    pub fn new(i0: FullIndex, i1: FullIndex) -> Self {
+        let (x0, y0) = i0.to_u16();
+        let (x1, y1) = i1.to_u16();
+        Self {
+            line: LineIter::new(x0, y0, x1, y1),
+        }
+    }
+    #[inline]
+    #[must_use]
+    pub fn new_vel(i0: FullIndex, vel: CellVelocity) -> Self {
+        let (x0, y0) = i0.to_u16();
+        let x1 = if vel.x > 0 {
+            x0 + vel.x.strict_cast::<u16>()
+        } else {
+            x0 - vel.x.unsigned_abs().strict_cast::<u16>()
+        };
+        let y1 = if vel.y > 0 {
+            y0 + vel.y.strict_cast::<u16>()
+        } else {
+            y0 - vel.y.unsigned_abs().strict_cast::<u16>()
+        };
+        Self {
+            line: LineIter::new(x0, y0, x1, y1),
+        }
+    }
+}
 #[derive(Debug, Clone)]
 pub struct LineIter {
     pub x0: u16,
